@@ -74,7 +74,9 @@ public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntenti
         // all allowed escape sequences in a double quoted string must be escaped with a backslash
         // see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double
         String escapeSequencesEscaped = text.replaceAll("(\\\\(?:n|r|t|v|e|f|\\\\|\\$|\"|[0-7]{1,3}|x[0-9A-Fa-f]{1,2}))", "\\\\$1");
-        String escapeSequencesAndDoubleQuotesEscaped = escapeSequencesEscaped.replaceAll("\"", "\\\\\"");
-        return escapeSequencesAndDoubleQuotesEscaped;
+        String doubleQuotesEscaped = escapeSequencesEscaped.replace("\"", "\\\"");
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        String variablesEscaped = doubleQuotesEscaped.replace("$", "\\$");
+        return variablesEscaped;
     }
 }
