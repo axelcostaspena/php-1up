@@ -13,8 +13,6 @@ import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.regex.Pattern;
-
 /**
  * Created by asdf
  */
@@ -22,7 +20,6 @@ public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntenti
 
     public static final String FAMILY_NAME = "Replace quotes";
     public static final String INTENTION_NAME = "Replace quotes with escaping";
-    private static Pattern stringDoubleQuoteContentEscapeCompiledPattern;
 
     @NotNull
     @Override
@@ -39,21 +36,19 @@ public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntenti
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) {
         PsiFile containingFile = psiElement.getContainingFile();
-        //System.out.println(containingFile.getClass());
-        if (containingFile instanceof PhpExpressionCodeFragment) {
-            return false;
-        }
+        //noinspection SimplifiableIfStatement
+        if (containingFile instanceof PhpExpressionCodeFragment) return false;
         return isPhpStringLiteralSingleQuote(psiElement);
     }
 
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) throws IncorrectOperationException {
         if (!isPhpStringLiteralSingleQuote(psiElement)) return;
-        PsiElement parentPsiElement = psiElement.getParent();
-        if (!(parentPsiElement instanceof StringLiteralExpression)) return;
-        String stringLiteralRealContent = getPhpStringLiteralSingleQuoteRealContent(psiElement);
-        StringLiteralExpression phpStringLiteralDoubleQuotePsi = getPhpStringLiteralDoubleQuotePsiFromText(psiElement.getProject(), stringLiteralRealContent);
-        parentPsiElement.replace(phpStringLiteralDoubleQuotePsi);
+        PsiElement parentPsi = psiElement.getParent();
+        if (!(parentPsi instanceof StringLiteralExpression)) return;
+        String stringLiteralContent = getPhpSingleQuotedStringRealContent(psiElement);
+        StringLiteralExpression phpDoubleQuotedStringLiteralPsi = getPhpDoubleQuotedStringLiteralPsiFromText(psiElement.getProject(), stringLiteralContent);
+        parentPsi.replace(phpDoubleQuotedStringLiteralPsi);
     }
 
     private boolean isPhpStringLiteralSingleQuote(PsiElement psiElement) {
@@ -61,23 +56,25 @@ public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntenti
         return astNode != null && astNode.getElementType() == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE;
     }
 
-    private String getPhpStringLiteralSingleQuoteRealContent(PsiElement psiElement) {
-        String phpStringLiteral = psiElement.getText();
-        String stringLiteralUnescapedContent = phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
-        String stringLiteralEscapedContent = stringLiteralUnescapedContent.replace("\\\\", "\\").replace("\\'", "'");
-        return stringLiteralEscapedContent;
+    private String getPhpSingleQuotedStringRealContent(PsiElement psiElement) {
+        String phpStringLiteralText = psiElement.getText();
+        String unescapedContent = phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        String escapedContent = unescapedContent.replace("\\\\", "\\").replace("\\'", "'");
+        return escapedContent;
     }
 
-    private StringLiteralExpression getPhpStringLiteralDoubleQuotePsiFromText(Project project, String stringContent) {
-        String escapedPhpDoubleQuoteStringContent = EscapePhpStringDoubleQuoteContent(stringContent);
-        String phpStringLiteral = "\"" + escapedPhpDoubleQuoteStringContent + "\"";
-        return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
+    private StringLiteralExpression getPhpDoubleQuotedStringLiteralPsiFromText(Project project, String stringContent) {
+        String escapedPhpDoubleQuoteStringContent = EscapeForPhpDoubleQuotedString(stringContent);
+        String phpStringLiteralText = "\"" + escapedPhpDoubleQuoteStringContent + "\"";
+        return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteralText);
     }
 
-    private String EscapePhpStringDoubleQuoteContent(String text) {
-        if (stringDoubleQuoteContentEscapeCompiledPattern == null) {
-            stringDoubleQuoteContentEscapeCompiledPattern = Pattern.compile("(\\\\(?:n|r|t|v|e|f|\\\\|\\$|\"|[0-7]{1,3}|x[0-9A-Fa-f]{1,2}))");
-        }
-        return stringDoubleQuoteContentEscapeCompiledPattern.matcher(text).replaceAll("\\$1");
+    private String EscapeForPhpDoubleQuotedString(String text) {
+        // all allowed escape sequences in a double quoted string must be escaped with a backslash
+        // see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double
+        String escapeSequencesEscaped = text.replaceAll("(\\\\(?:n|r|t|v|e|f|\\\\|\\$|\"|[0-7]{1,3}|x[0-9A-Fa-f]{1,2}))", "\\\\$1");
+        String escapeSequencesAndDoubleQuotesEscaped = escapeSequencesEscaped.replaceAll("\"", "\\\\\"");
+        return escapeSequencesAndDoubleQuotesEscaped;
     }
 }
