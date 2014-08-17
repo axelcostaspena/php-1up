@@ -1,6 +1,5 @@
 package com.axeldev;
 
-import com.axeldev.php.lang.intentions.PhpReplaceQuotesWithEscapingIntention;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.projectRoots.JavaSdk;

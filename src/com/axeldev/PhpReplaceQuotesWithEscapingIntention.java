@@ -1,4 +1,4 @@
-package com.axeldev.php.lang.intentions;
+package com.axeldev;
 
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.lang.ASTNode;
