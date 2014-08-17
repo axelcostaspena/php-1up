@@ -174,7 +174,7 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
 
     private StringLiteralExpression getPhpSingleQuotedStringLiteralPsiFromText(Project project, String stringContent) {
         String escapedPhpDoubleQuoteStringContent = EscapeForPhpDoubleQuotedString(stringContent);
-        String phpStringLiteralText = "\"" + escapedPhpDoubleQuoteStringContent + "\"";
+        String phpStringLiteralText = "'" + escapedPhpDoubleQuoteStringContent + "'";
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteralText);
     }
 
