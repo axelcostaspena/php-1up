@@ -53,4 +53,8 @@ public class PhpReplaceQuotesWithEscapingIntentionTest extends LightPlatformCode
         basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testDescriptionExample() {
+        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
