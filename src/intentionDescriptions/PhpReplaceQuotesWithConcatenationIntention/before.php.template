@@ -1,0 +1,3 @@
+<?
+
+$foo = "Those escape sequences are not understood on a single quoted string: \n \65 \x41 \" \\ '";

@@ -1,0 +1,4 @@
+<?
+
+$foo = 'Those escape sequences are not understood on a single quoted string:
+ A A " \\ \'';
