@@ -29,6 +29,10 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <intentionAction>
+            <className>com.axeldev.PhpReplaceQuotesWithConcatenationIntention</className>
+            <category>PHP</category>
+        </intentionAction>
     </extensions>
 
     <application-components>
