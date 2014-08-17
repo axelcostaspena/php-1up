@@ -1,0 +1,3 @@
+<?
+
+$foo = 'foo <caret>bar';
