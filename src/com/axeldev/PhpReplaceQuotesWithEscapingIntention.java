@@ -13,9 +13,6 @@ import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Created by asdf
- */
 public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntentionAction {
 
     public static final String FAMILY_NAME = "Replace quotes";

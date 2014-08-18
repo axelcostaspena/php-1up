@@ -6,15 +6,12 @@ import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
+import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
-/**
- * Created by asdf
- */
-public class PhpReplaceQuotesWithEscapingIntentionTest extends LightPlatformCodeInsightFixtureTestCase {
+public class PhpReplaceQuotesWithEscapingIntentionTest extends LightCodeInsightFixtureTestCase {
 
     public static final String TEST_INTENTION_NAME = PhpReplaceQuotesWithEscapingIntention.INTENTION_NAME;
 
@@ -34,7 +31,7 @@ public class PhpReplaceQuotesWithEscapingIntentionTest extends LightPlatformCode
     @Override
     protected String getTestDataPath() {
         File sourceRoot = getProjectRootPath();
-        return new File(sourceRoot, "testData").getPath();
+        return new File(new File(sourceRoot, "testData"), getClass().getName()).getPath();
     }
 
     private static File getProjectRootPath() {
