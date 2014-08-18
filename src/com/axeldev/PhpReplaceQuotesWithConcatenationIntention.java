@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.util.IncorrectOperationException;
 import com.jetbrains.php.lang.lexer.PhpTokenTypes;
 import com.jetbrains.php.lang.psi.PhpExpressionCodeFragment;
+import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.jetbrains.annotations.NotNull;
@@ -60,17 +61,29 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     }
 
     private boolean isPhpStringLiteralDoubleQuote(PsiElement psiElement) {
+        if (psiElement instanceof PhpFile)
+            return false;
         ASTNode astNode = psiElement.getNode();
-        return astNode != null && astNode.getElementType() == PhpTokenTypes.STRING_LITERAL;
+        if (astNode == null)
+            return false;
+        if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL)
+            return true;
+        PsiElement parentPsi = psiElement.getParent();
+        boolean isDoubleQuotedString = parentPsi != null && isPhpStringLiteralDoubleQuote(parentPsi);
+        return isDoubleQuotedString;
     }
 
     private String getPhpDoubleQuotedStringRealContent(PsiElement psiElement) {
         String phpStringLiteralText = psiElement.getText();
         String unescapedContent = phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
+        return unescapePhpDoubleQuotedNonComplexStringContent(unescapedContent);
+    }
+
+    private String unescapePhpDoubleQuotedNonComplexStringContent(String text) {
         StringBuilder escapedContentBuffer = new StringBuilder();
         EscapingState escapingState = EscapingState.ReadingNewCharacter;
         StringBuilder currentEscapeBuffer = new StringBuilder();
-        for (char currentCharacter : unescapedContent.toCharArray()) {
+        for (char currentCharacter : text.toCharArray()) {
             boolean currentCharIsDigit = Character.isDigit(currentCharacter);
             if ((escapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharIsDigit) ||
                 escapingState == EscapingState.ReadingDecimalCharEscape) {
@@ -173,12 +186,12 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     }
 
     private StringLiteralExpression getPhpSingleQuotedStringLiteralPsiFromText(Project project, String stringContent) {
-        String escapedPhpDoubleQuoteStringContent = EscapeForPhpDoubleQuotedString(stringContent);
+        String escapedPhpDoubleQuoteStringContent = EscapeForPhpSingleQuotedString(stringContent);
         String phpStringLiteralText = "'" + escapedPhpDoubleQuoteStringContent + "'";
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteralText);
     }
 
-    private String EscapeForPhpDoubleQuotedString(String text) {
+    private String EscapeForPhpSingleQuotedString(String text) {
         @SuppressWarnings("UnnecessaryLocalVariable")
         String singleQuotesAndBackslashEscaped = text.replaceAll("(\\\\|')", "\\\\$1");
         return singleQuotesAndBackslashEscaped;
