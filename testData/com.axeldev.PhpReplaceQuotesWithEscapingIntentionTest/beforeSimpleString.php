@@ -1,3 +1,3 @@
 <?
 
-$foo = 'foo <caret>bar';
+$foo = '<caret>foo bar';
