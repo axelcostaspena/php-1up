@@ -66,7 +66,9 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
         ASTNode astNode = psiElement.getNode();
         if (astNode == null)
             return false;
-        if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL)
+        if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL || astNode.getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE)
+            return true;
+        if (psiElement instanceof StringLiteralExpression && astNode.getFirstChildNode().getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE)
             return true;
         PsiElement parentPsi = psiElement.getParent();
         boolean isDoubleQuotedString = parentPsi != null && isPhpStringLiteralDoubleQuote(parentPsi);
