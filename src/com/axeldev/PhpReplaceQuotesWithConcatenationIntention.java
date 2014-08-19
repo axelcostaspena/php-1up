@@ -47,32 +47,30 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
         PsiFile containingFile = psiElement.getContainingFile();
         //noinspection SimplifiableIfStatement
         if (containingFile instanceof PhpExpressionCodeFragment) return false;
-        return isPhpStringLiteralDoubleQuote(psiElement);
+        return getPhpDoubleQuotedStringLiteralExpression(psiElement) != null;
     }
 
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) throws IncorrectOperationException {
-        if (!isPhpStringLiteralDoubleQuote(psiElement)) return;
-        PsiElement parentPsi = psiElement.getParent();
-        if (!(parentPsi instanceof StringLiteralExpression)) return;
-        String stringLiteralContent = getPhpDoubleQuotedStringRealContent(psiElement);
+        PsiElement stringLiteralExpressionPsi = getPhpDoubleQuotedStringLiteralExpression(psiElement);
+        String stringLiteralContent = getPhpDoubleQuotedStringRealContent(stringLiteralExpressionPsi);
         StringLiteralExpression phpSingleQuotedStringLiteralPsi = getPhpSingleQuotedStringLiteralPsiFromText(psiElement.getProject(), stringLiteralContent);
-        parentPsi.replace(phpSingleQuotedStringLiteralPsi);
+        stringLiteralExpressionPsi.replace(phpSingleQuotedStringLiteralPsi);
     }
 
-    private boolean isPhpStringLiteralDoubleQuote(PsiElement psiElement) {
-        if (psiElement instanceof PhpFile)
-            return false;
-        ASTNode astNode = psiElement.getNode();
-        if (astNode == null)
-            return false;
-        if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL || astNode.getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE)
-            return true;
-        if (psiElement instanceof StringLiteralExpression && astNode.getFirstChildNode().getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE)
-            return true;
+    private PsiElement getPhpDoubleQuotedStringLiteralExpression(PsiElement psiElement) {
+        if (psiElement instanceof PhpFile) return null;
+        if (psiElement instanceof StringLiteralExpression) {
+            PsiElement firstChild = psiElement.getFirstChild();
+            if (firstChild != null) {
+                ASTNode astNode = firstChild.getNode();
+                if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL || astNode.getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE) {
+                    return psiElement;
+                }
+            }
+        }
         PsiElement parentPsi = psiElement.getParent();
-        boolean isDoubleQuotedString = parentPsi != null && isPhpStringLiteralDoubleQuote(parentPsi);
-        return isDoubleQuotedString;
+        return parentPsi != null ? getPhpDoubleQuotedStringLiteralExpression(parentPsi) : null;
     }
 
     private String getPhpDoubleQuotedStringRealContent(PsiElement psiElement) {
