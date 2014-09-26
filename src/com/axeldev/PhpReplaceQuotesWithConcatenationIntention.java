@@ -6,19 +6,27 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.tree.IElementType;
 import com.intellij.util.IncorrectOperationException;
 import com.jetbrains.php.lang.lexer.PhpTokenTypes;
 import com.jetbrains.php.lang.psi.PhpExpressionCodeFragment;
 import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
+import com.jetbrains.php.lang.psi.elements.ArrayAccessExpression;
+import com.jetbrains.php.lang.psi.elements.PhpExpression;
+import com.jetbrains.php.lang.psi.elements.PhpPsiElement;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIntentionAction {
 
     public static final String FAMILY_NAME = "Replace quotes";
     // TODO mention also variable concatenation, make title dynamic?
-    public static final String INTENTION_NAME = "Replace quotes with unescaping and variable";
+    public static final String INTENTION_NAME = "Replace quotes with unescaping and variable concatenation";
     public static final char CHAR_VERTICAL_TAB = (char) 11;
     public static final char CHAR_ESC = (char) 27;
     public static final char CHAR_NEWLINE = '\n';
@@ -67,19 +75,62 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) throws IncorrectOperationException {
         PsiElement stringLiteralExpressionPsi = getPhpDoubleQuotedStringLiteralExpression(psiElement);
-        String stringLiteralContent = getPhpDoubleQuotedStringRealContent(stringLiteralExpressionPsi);
-        StringLiteralExpression phpSingleQuotedStringLiteralPsi = getPhpSingleQuotedStringLiteralPsiFromText(psiElement.getProject(), stringLiteralContent);
-        stringLiteralExpressionPsi.replace(phpSingleQuotedStringLiteralPsi);
+        ASTNode astNode = stringLiteralExpressionPsi.getNode();
+        if (astNode == null) return;
+        ASTNode[] stringLiteralExpressionContentPieces = astNode.getChildren(null);
+        // TODO does this happen on empty string? if so, we should replace the empty string with a single quoted one, or maybe hide this intention?
+        if (stringLiteralExpressionContentPieces.length == 0) return;
+        if (stringLiteralExpressionContentPieces.length > 1) {
+            List<String> stringAndVariableConcatenationList = new ArrayList<String>();
+            for (ASTNode stringLiteralExpressionContentPiece : stringLiteralExpressionContentPieces) {
+                IElementType psiElementType = stringLiteralExpressionContentPiece.getElementType();
+                if (psiElementType == PhpTokenTypes.chLDOUBLE_QUOTE ||
+                    psiElementType == PhpTokenTypes.chRDOUBLE_QUOTE) continue;
+                if (psiElementType == PhpTokenTypes.STRING_LITERAL) {
+                    // ASTNode is a textual content of the double string
+                    stringAndVariableConcatenationList.add(getPhpSingleQuotedStringLiteralFromText(unescapePhpDoubleQuotedNonComplexStringContent(stringLiteralExpressionContentPiece.getText())));
+                } else {
+                    // ASTNode is a variable os expression
+                    // TODO pay attention to curly braces
+                    String variableOrExpressionText = getInComplexStringVariableOrExpressionRealText(stringLiteralExpressionContentPiece);
+                    stringAndVariableConcatenationList.add(variableOrExpressionText);
+                }
+            }
+            String stringAndVariableConcatenationExpression = StringUtils.join(stringAndVariableConcatenationList, '.');
+            PhpPsiElement phpSingleQuotedStringLiteralAndVariableConcatenationPsi = PhpPsiElementFactory.createPhpPsiFromText(project, PhpExpression.class, stringAndVariableConcatenationExpression);
+            stringLiteralExpressionPsi.replace(phpSingleQuotedStringLiteralAndVariableConcatenationPsi);
+        } else {
+            String phpStringLiteralText = getPhpSingleQuotedStringLiteralFromText(getPhpDoubleQuotedStringRealContent(stringLiteralExpressionContentPieces[0].getPsi()));
+            StringLiteralExpression phpSingleQuotedStringLiteralPsi = PhpPsiElementFactory.createPhpPsiFromText(psiElement.getProject(), StringLiteralExpression.class, phpStringLiteralText);
+            stringLiteralExpressionPsi.replace(phpSingleQuotedStringLiteralPsi);
+        }
     }
 
-    private PsiElement getPhpDoubleQuotedStringLiteralExpression(PsiElement psiElement) {
+    private String getInComplexStringVariableOrExpressionRealText(ASTNode expressionAstNode) {
+        ASTNode[] children = expressionAstNode.getChildren(null);
+        if (children.length == 3 &&
+            children[0].getElementType() == PhpTokenTypes.chLBRACE &&
+            children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
+            String expressionText = expressionAstNode.getText();
+            return expressionText.substring(1, expressionText.length() - 1);
+        } else if (children[0].getPsi() instanceof ArrayAccessExpression) {
+            ASTNode[] arrayAccessExpressionChildren = children[0].getChildren(null);
+            String variableName = arrayAccessExpressionChildren[0].getText();
+            String arrayAccessKey = arrayAccessExpressionChildren[2].getText();
+            return variableName + '[' + '\'' + arrayAccessKey + '\'' + ']';
+        } else {
+            return expressionAstNode.getText();
+        }
+    }
+
+    private StringLiteralExpression getPhpDoubleQuotedStringLiteralExpression(PsiElement psiElement) {
         if (psiElement instanceof PhpFile) return null;
         if (psiElement instanceof StringLiteralExpression) {
             PsiElement firstChild = psiElement.getFirstChild();
             if (firstChild != null) {
                 ASTNode astNode = firstChild.getNode();
                 if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL || astNode.getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE) {
-                    return psiElement;
+                    return (StringLiteralExpression) psiElement;
                 }
             }
         }
@@ -210,10 +261,9 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
         return escapedContentBuffer.toString();
     }
 
-    private StringLiteralExpression getPhpSingleQuotedStringLiteralPsiFromText(Project project, String stringContent) {
+    private String getPhpSingleQuotedStringLiteralFromText(String stringContent) {
         String escapedPhpDoubleQuoteStringContent = EscapeForPhpSingleQuotedString(stringContent);
-        String phpStringLiteralText = CHAR_SINGLE_QUOTE + escapedPhpDoubleQuoteStringContent + CHAR_SINGLE_QUOTE;
-        return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteralText);
+        return CHAR_SINGLE_QUOTE + escapedPhpDoubleQuoteStringContent + CHAR_SINGLE_QUOTE;
     }
 
     private String EscapeForPhpSingleQuotedString(String text) {
