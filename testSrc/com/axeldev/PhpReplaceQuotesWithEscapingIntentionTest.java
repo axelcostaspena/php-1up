@@ -46,11 +46,15 @@ public class PhpReplaceQuotesWithEscapingIntentionTest extends LightCodeInsightF
         myFixture.checkResultByFile("after" + testName + ".php");
     }
 
+    public void testIntentionDescriptionExample() {
+        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
     public void testSimpleString() {
         basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
-    public void testDescriptionExample() {
+    public void testEscapeSequences() {
         basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
