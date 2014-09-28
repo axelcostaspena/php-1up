@@ -54,4 +54,8 @@ public class PhpReplaceQuotesWithEscapingIntentionTest extends LightCodeInsightF
         basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testStringEndingWithBackslash() {
+        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
