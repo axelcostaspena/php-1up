@@ -5,16 +5,14 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.util.IncorrectOperationException;
+import com.jetbrains.php.PhpWorkaroundUtil;
 import com.jetbrains.php.lang.lexer.PhpTokenTypes;
-import com.jetbrains.php.lang.psi.PhpExpressionCodeFragment;
 import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.ArrayAccessExpression;
 import com.jetbrains.php.lang.psi.elements.PhpExpression;
-import com.jetbrains.php.lang.psi.elements.PhpPsiElement;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +41,9 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     public static final char CHAR_R = 'r';
     public static final char CHAR_N = 'n';
     public static final String REGEXP_TEST_HEX_CHAR = "[0-9A-Fa-f]";
+    public static final char CHAR_DOT = '.';
+    public static final char CHAR_LEFT_SQUARE_BRACKET = '[';
+    public static final char CHAR_RIGHT_SQUARE_BRACKET = ']';
 
     private enum EscapingState {
         ReadingNewCharacter,
@@ -66,106 +67,126 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) {
-        PsiFile containingFile = psiElement.getContainingFile();
         //noinspection SimplifiableIfStatement
-        if (containingFile instanceof PhpExpressionCodeFragment) return false;
-        return getPhpDoubleQuotedStringLiteralExpression(psiElement) != null;
+        if (!PhpWorkaroundUtil.isIntentionAvailable(psiElement)) return false;
+        return getPhpDoubleQuotedStringExpression(psiElement) != null;
     }
 
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) throws IncorrectOperationException {
-        PsiElement stringLiteralExpressionPsi = getPhpDoubleQuotedStringLiteralExpression(psiElement);
-        ASTNode astNode = stringLiteralExpressionPsi.getNode();
-        if (astNode == null) return;
-        ASTNode[] stringLiteralExpressionContentPieces = astNode.getChildren(null);
+        PsiElement stringLiteralExpression = getPhpDoubleQuotedStringExpression(psiElement);
+        if (stringLiteralExpression == null) return;
+        PsiElement singleQuoteExpression = convertPhpDoubleQuotedStringToSingleQuoteAndExpressionConcatenation(project, psiElement, stringLiteralExpression);
+        if (singleQuoteExpression == null) return;
+        stringLiteralExpression.replace(singleQuoteExpression);
+    }
+
+    private PsiElement convertPhpDoubleQuotedStringToSingleQuoteAndExpressionConcatenation(Project project, PsiElement psiElement, PsiElement stringLiteralExpression) {
+        ASTNode stringExpressionAstNode = stringLiteralExpression.getNode();
+        if (stringExpressionAstNode == null) return null;
+        ASTNode[] stringLiteralExpressionPieces = stringExpressionAstNode.getChildren(null);
         // TODO does this happen on empty string? if so, we should replace the empty string with a single quoted one, or maybe hide this intention?
-        if (stringLiteralExpressionContentPieces.length == 0) return;
-        if (stringLiteralExpressionContentPieces.length > 1) {
-            List<String> stringAndVariableConcatenationList = new ArrayList<String>();
-            for (ASTNode stringLiteralExpressionContentPiece : stringLiteralExpressionContentPieces) {
-                IElementType psiElementType = stringLiteralExpressionContentPiece.getElementType();
-                if (psiElementType == PhpTokenTypes.chLDOUBLE_QUOTE ||
-                    psiElementType == PhpTokenTypes.chRDOUBLE_QUOTE) continue;
-                if (psiElementType == PhpTokenTypes.STRING_LITERAL) {
-                    // ASTNode is a textual content of the double string
-                    stringAndVariableConcatenationList.add(getPhpSingleQuotedStringLiteralFromText(unescapePhpDoubleQuotedNonComplexStringContent(stringLiteralExpressionContentPiece.getText())));
+        if (stringLiteralExpressionPieces.length == 0) return null;
+        if (stringLiteralExpressionPieces.length > 1) {
+            /* the string literal expression PSI has several children when there are embedded variables or expressions,
+             * so the pieces are the left double quote, one or more string pieces and embedded variables or expressions,
+             * and the final right double quote */
+            List<String> stringAndVariableList = new ArrayList<String>();
+            for (ASTNode stringLiteralExpressionPiece : stringLiteralExpressionPieces) {
+                IElementType pieceType = stringLiteralExpressionPiece.getElementType();
+                // skip delimiter quotes
+                if (pieceType == PhpTokenTypes.chLDOUBLE_QUOTE ||
+                    pieceType == PhpTokenTypes.chRDOUBLE_QUOTE) continue;
+                if (pieceType == PhpTokenTypes.STRING_LITERAL) {
+                    // ASTNode is a piece of textual content of the string
+                    String stringPieceContent = stringLiteralExpressionPiece.getText();
+                    String unescapedContent = unescapePhpDoubleQuotedStringContent(stringPieceContent);
+                    String singleQuoteEscapedContent = escapePhpSingleQuotedStringContent(unescapedContent);
+                    stringAndVariableList.add(CHAR_SINGLE_QUOTE + singleQuoteEscapedContent + CHAR_SINGLE_QUOTE);
                 } else {
-                    // ASTNode is a variable os expression
-                    // TODO pay attention to curly braces
-                    String variableOrExpressionText = getInComplexStringVariableOrExpressionRealText(stringLiteralExpressionContentPiece);
-                    stringAndVariableConcatenationList.add(variableOrExpressionText);
+                    // ASTNode is a variable or expression embedded in the string
+                    String variableOrExpression = cleanupStringEmbeddedExpression(stringLiteralExpressionPiece);
+                    stringAndVariableList.add(variableOrExpression);
                 }
             }
-            String stringAndVariableConcatenationExpression = StringUtils.join(stringAndVariableConcatenationList, '.');
-            PhpPsiElement phpSingleQuotedStringLiteralAndVariableConcatenationPsi = PhpPsiElementFactory.createPhpPsiFromText(project, PhpExpression.class, stringAndVariableConcatenationExpression);
-            stringLiteralExpressionPsi.replace(phpSingleQuotedStringLiteralAndVariableConcatenationPsi);
+            String stringAndExpressionConcatenation = StringUtils.join(stringAndVariableList, CHAR_DOT);
+            if (stringAndExpressionConcatenation == null) return null;
+            return PhpPsiElementFactory.createPhpPsiFromText(project, PhpExpression.class, stringAndExpressionConcatenation);
         } else {
-            String phpStringLiteralText = getPhpSingleQuotedStringLiteralFromText(getPhpDoubleQuotedStringRealContent(stringLiteralExpressionContentPieces[0].getPsi()));
-            StringLiteralExpression phpSingleQuotedStringLiteralPsi = PhpPsiElementFactory.createPhpPsiFromText(psiElement.getProject(), StringLiteralExpression.class, phpStringLiteralText);
-            stringLiteralExpressionPsi.replace(phpSingleQuotedStringLiteralPsi);
+            ASTNode singleStringLiteralPiece = stringLiteralExpressionPieces[0];
+            String unescapedContent = getPhpDoubleQuotedStringUnescapedContent(singleStringLiteralPiece.getPsi());
+            String singleQuoteEscapedContent = escapePhpSingleQuotedStringContent(unescapedContent);
+            String phpSingleQuotedString = CHAR_SINGLE_QUOTE + singleQuoteEscapedContent + CHAR_SINGLE_QUOTE;
+            return PhpPsiElementFactory.createPhpPsiFromText(psiElement.getProject(), StringLiteralExpression.class, phpSingleQuotedString);
         }
     }
 
-    private String getInComplexStringVariableOrExpressionRealText(ASTNode expressionAstNode) {
-        ASTNode[] children = expressionAstNode.getChildren(null);
+    private String cleanupStringEmbeddedExpression(ASTNode astNode) {
+        ASTNode[] children = astNode.getChildren(null);
         if (children.length == 3 &&
             children[0].getElementType() == PhpTokenTypes.chLBRACE &&
             children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
-            String expressionText = expressionAstNode.getText();
-            return expressionText.substring(1, expressionText.length() - 1);
+            // it's a variable or expression which was wrapped in curly braces in the string
+            String expression = astNode.getText();
+            return expression.substring(1, expression.length() - 1);
         } else if (children[0].getPsi() instanceof ArrayAccessExpression) {
+            /* it's an array access expression, and since it's the only child it isn't wrapped in curly braces
+             * so it's using the unquoted syntax on the access key: take the identifier part, the left square bracket,
+             * wrap the key in quotes and finally take the right square bracket */
             ASTNode[] arrayAccessExpressionChildren = children[0].getChildren(null);
-            String variableName = arrayAccessExpressionChildren[0].getText();
+            String identifier = arrayAccessExpressionChildren[0].getText();
             String arrayAccessKey = arrayAccessExpressionChildren[2].getText();
-            return variableName + '[' + '\'' + arrayAccessKey + '\'' + ']';
+            return identifier + CHAR_LEFT_SQUARE_BRACKET + CHAR_SINGLE_QUOTE + arrayAccessKey + CHAR_SINGLE_QUOTE + CHAR_RIGHT_SQUARE_BRACKET;
         } else {
-            return expressionAstNode.getText();
+            // if none of the previous condition is matched, then it's a simple variable embedding
+            return astNode.getText();
         }
     }
 
-    private StringLiteralExpression getPhpDoubleQuotedStringLiteralExpression(PsiElement psiElement) {
+    private PsiElement getPhpDoubleQuotedStringExpression(PsiElement psiElement) {
         if (psiElement instanceof PhpFile) return null;
         if (psiElement instanceof StringLiteralExpression) {
             PsiElement firstChild = psiElement.getFirstChild();
             if (firstChild != null) {
-                ASTNode astNode = firstChild.getNode();
-                if (astNode.getElementType() == PhpTokenTypes.STRING_LITERAL || astNode.getElementType() == PhpTokenTypes.chLDOUBLE_QUOTE) {
-                    return (StringLiteralExpression) psiElement;
+                ASTNode childAstNode = firstChild.getNode();
+                IElementType childElementType = childAstNode.getElementType();
+                if (childElementType == PhpTokenTypes.STRING_LITERAL || childElementType == PhpTokenTypes.chLDOUBLE_QUOTE) {
+                    return psiElement;
                 }
             }
         }
         PsiElement parentPsi = psiElement.getParent();
-        return parentPsi != null ? getPhpDoubleQuotedStringLiteralExpression(parentPsi) : null;
+        return parentPsi != null ? getPhpDoubleQuotedStringExpression(parentPsi) : null;
     }
 
-    private String getPhpDoubleQuotedStringRealContent(PsiElement psiElement) {
-        String phpStringLiteralText = psiElement.getText();
-        String unescapedContent = phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
-        return unescapePhpDoubleQuotedNonComplexStringContent(unescapedContent);
+    private String getPhpDoubleQuotedStringUnescapedContent(PsiElement psiElement) {
+        String phpStringLiteral = psiElement.getText();
+        String escapedContent = phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
+        return unescapePhpDoubleQuotedStringContent(escapedContent);
     }
 
-    private String unescapePhpDoubleQuotedNonComplexStringContent(String text) {
-        StringBuilder escapedContentBuffer = new StringBuilder();
-        EscapingState escapingState = EscapingState.ReadingNewCharacter;
-        StringBuilder currentEscapeBuffer = new StringBuilder();
-        for (char currentCharacter : text.toCharArray()) {
+    private String unescapePhpDoubleQuotedStringContent(String escapedContent) {
+        StringBuilder unescapedContentBuffer = new StringBuilder();
+        EscapingState unescapingState = EscapingState.ReadingNewCharacter;
+        StringBuilder currentUnescapeBuffer = new StringBuilder();
+        for (char currentCharacter : escapedContent.toCharArray()) {
             boolean currentCharIsDigit = Character.isDigit(currentCharacter);
             // ReadingPotentialEscapeSequence means we have just found a backslash so next character will be checked
             // for matching any valid escape sequence
-            if (escapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharIsDigit) {
+            if (unescapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharIsDigit) {
                 // detected decimal character escape sequence
-                escapingState = EscapingState.ReadingDecimalCharEscape;
+                unescapingState = EscapingState.ReadingDecimalCharEscape;
             }
-            if (escapingState == EscapingState.ReadingDecimalCharEscape) {
+            if (unescapingState == EscapingState.ReadingDecimalCharEscape) {
                 if (currentCharIsDigit) {
-                    currentEscapeBuffer.append(currentCharacter);
+                    currentUnescapeBuffer.append(currentCharacter);
                 }
-                if (!currentCharIsDigit || currentEscapeBuffer.length() == 3) {
+                if (!currentCharIsDigit || currentUnescapeBuffer.length() == 3) {
                     // decimal sequence broken or max length reached, process current buffer and empty it
-                    escapedContentBuffer.append((char) Integer.parseInt(currentEscapeBuffer.toString()));
-                    currentEscapeBuffer.setLength(0);
+                    unescapedContentBuffer.append((char) Integer.parseInt(currentUnescapeBuffer.toString()));
+                    currentUnescapeBuffer.setLength(0);
                     // stop decimal sequence reading
-                    escapingState = EscapingState.ReadingNewCharacter;
+                    unescapingState = EscapingState.ReadingNewCharacter;
                     if (currentCharIsDigit) {
                         // current character has been processed as part of the decimal sequence, jump to next character
                         continue;
@@ -174,35 +195,35 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
                     // the ReadingNewCharacter block
                 }
             }
-            if (escapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharacter == 'x') {
+            if (unescapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharacter == 'x') {
                 // maybe hex character sequence detected, jump to next character to check for that
-                escapingState = EscapingState.ReadingPotentialHexCharEscape;
+                unescapingState = EscapingState.ReadingPotentialHexCharEscape;
                 continue;
             }
-            if (escapingState == EscapingState.ReadingPotentialHexCharEscape) {
+            if (unescapingState == EscapingState.ReadingPotentialHexCharEscape) {
                 // we have just found \x, so check if now follows an hex sequence
                 if (Character.toString(currentCharacter).matches(REGEXP_TEST_HEX_CHAR)) {
                     // verified it's an hex char sequence, let the character be processed as part of it on the
                     // ReadingHexCharEscape block
-                    escapingState = EscapingState.ReadingHexCharEscape;
+                    unescapingState = EscapingState.ReadingHexCharEscape;
                 } else {
                     // no hex sequence follows, so just output the backslash and the wrongly escaped x, and let current
                     // character  be normally processed on the ReadingNewCharacter block
-                    escapedContentBuffer.append("\\x");
-                    escapingState = EscapingState.ReadingNewCharacter;
+                    unescapedContentBuffer.append("\\x");
+                    unescapingState = EscapingState.ReadingNewCharacter;
                 }
             }
-            if (escapingState == EscapingState.ReadingHexCharEscape) {
+            if (unescapingState == EscapingState.ReadingHexCharEscape) {
                 boolean currentCharIsHex = Character.toString(currentCharacter).matches(REGEXP_TEST_HEX_CHAR);
                 if (currentCharIsHex) {
-                    currentEscapeBuffer.append(currentCharacter);
+                    currentUnescapeBuffer.append(currentCharacter);
                 }
-                if (!currentCharIsHex || currentEscapeBuffer.length() == 2) {
+                if (!currentCharIsHex || currentUnescapeBuffer.length() == 2) {
                     // hex sequence broken or max length reached, process current buffer and empty it
-                    escapedContentBuffer.append((char) Integer.parseInt(currentEscapeBuffer.toString(), 16));
-                    currentEscapeBuffer.setLength(0);
+                    unescapedContentBuffer.append((char) Integer.parseInt(currentUnescapeBuffer.toString(), 16));
+                    currentUnescapeBuffer.setLength(0);
                     // stop hex sequence reading
-                    escapingState = EscapingState.ReadingNewCharacter;
+                    unescapingState = EscapingState.ReadingNewCharacter;
                     if (currentCharIsHex) {
                         // current character has been processed as part of the hex sequence, jump to next character
                         continue;
@@ -211,62 +232,57 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
                     // the ReadingNewCharacter block
                 }
             }
-            if (escapingState == EscapingState.ReadingPotentialEscapeSequence) {
+            if (unescapingState == EscapingState.ReadingPotentialEscapeSequence) {
                 // last character was a backslash so check if current character is a valid escape sequence
                 switch (currentCharacter) {
                     case CHAR_N:
-                        escapedContentBuffer.append(CHAR_NEWLINE);
+                        unescapedContentBuffer.append(CHAR_NEWLINE);
                         break;
                     case CHAR_R:
-                        escapedContentBuffer.append(CHAR_CARRIAGE_RETURN);
+                        unescapedContentBuffer.append(CHAR_CARRIAGE_RETURN);
                         break;
                     case CHAR_T:
-                        escapedContentBuffer.append(CHAR_TAB);
+                        unescapedContentBuffer.append(CHAR_TAB);
                         break;
                     case CHAR_V:
-                        escapedContentBuffer.append(CHAR_VERTICAL_TAB);
+                        unescapedContentBuffer.append(CHAR_VERTICAL_TAB);
                         break;
                     case CHAR_E:
-                        escapedContentBuffer.append(CHAR_ESC);
+                        unescapedContentBuffer.append(CHAR_ESC);
                         break;
                     case CHAR_F:
-                        escapedContentBuffer.append(CHAR_FORM_FEED);
+                        unescapedContentBuffer.append(CHAR_FORM_FEED);
                         break;
                     case CHAR_BACKSLASH:
-                        escapedContentBuffer.append(CHAR_BACKSLASH);
+                        unescapedContentBuffer.append(CHAR_BACKSLASH);
                         break;
                     case CHAR_DOUBLE_QUOTE:
-                        escapedContentBuffer.append(CHAR_DOUBLE_QUOTE);
+                        unescapedContentBuffer.append(CHAR_DOUBLE_QUOTE);
                         break;
                     default:
                         // escape sequence was bad, so output both the backslash and the wrongly escaped character
-                        escapedContentBuffer.append(CHAR_BACKSLASH);
-                        escapedContentBuffer.append(currentCharacter);
+                        unescapedContentBuffer.append(CHAR_BACKSLASH);
+                        unescapedContentBuffer.append(currentCharacter);
                         break;
                 }
                 // reset reading mode and jump to next character
-                escapingState = EscapingState.ReadingNewCharacter;
+                unescapingState = EscapingState.ReadingNewCharacter;
                 continue;
             }
             // normal processing of character: if it's backslash a new escape sequence begins, otherwise character is
             // outputted as is
-            if (escapingState == EscapingState.ReadingNewCharacter) {
+            if (unescapingState == EscapingState.ReadingNewCharacter) {
                 if (currentCharacter == CHAR_BACKSLASH) {
-                    escapingState = EscapingState.ReadingPotentialEscapeSequence;
+                    unescapingState = EscapingState.ReadingPotentialEscapeSequence;
                 } else {
-                    escapedContentBuffer.append(currentCharacter);
+                    unescapedContentBuffer.append(currentCharacter);
                 }
             }
         }
-        return escapedContentBuffer.toString();
+        return unescapedContentBuffer.toString();
     }
 
-    private String getPhpSingleQuotedStringLiteralFromText(String stringContent) {
-        String escapedPhpDoubleQuoteStringContent = EscapeForPhpSingleQuotedString(stringContent);
-        return CHAR_SINGLE_QUOTE + escapedPhpDoubleQuoteStringContent + CHAR_SINGLE_QUOTE;
-    }
-
-    private String EscapeForPhpSingleQuotedString(String text) {
+    private String escapePhpSingleQuotedStringContent(String text) {
         @SuppressWarnings("UnnecessaryLocalVariable")
         String singleQuotesAndBackslashEscaped = text.replaceAll("(\\\\|')", "\\\\$1");
         return singleQuotesAndBackslashEscaped;
