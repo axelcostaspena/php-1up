@@ -17,41 +17,34 @@ import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIntentionAction {
 
-    public static final String FAMILY_NAME = "Replace quotes";
+    public static final String FAMILY_NAME               = "Replace quotes";
     // TODO mention also variable concatenation, make title dynamic?
-    public static final String INTENTION_NAME = "Replace quotes with unescaping and variable concatenation";
-    public static final char CHAR_VERTICAL_TAB = (char) 11;
-    public static final char CHAR_ESC = (char) 27;
-    public static final char CHAR_NEWLINE = '\n';
-    public static final char CHAR_CARRIAGE_RETURN = '\r';
-    public static final char CHAR_TAB = '\t';
-    public static final char CHAR_FORM_FEED = '\f';
-    public static final char CHAR_BACKSLASH = '\\';
-    public static final char CHAR_DOUBLE_QUOTE = '"';
-    public static final char CHAR_SINGLE_QUOTE = '\'';
-    public static final char CHAR_F = 'f';
-    public static final char CHAR_E = 'e';
-    public static final char CHAR_V = 'v';
-    public static final char CHAR_T = 't';
-    public static final char CHAR_R = 'r';
-    public static final char CHAR_N = 'n';
-    public static final String REGEXP_TEST_HEX_CHAR = "[0-9A-Fa-f]";
-    public static final char CHAR_DOT = '.';
-    public static final char CHAR_LEFT_SQUARE_BRACKET = '[';
-    public static final char CHAR_RIGHT_SQUARE_BRACKET = ']';
-
-    private enum EscapingState {
-        ReadingNewCharacter,
-        ReadingPotentialEscapeSequence,
-        ReadingDecimalCharEscape,
-        ReadingPotentialHexCharEscape,
-        ReadingHexCharEscape
-    }
+    public static final String INTENTION_NAME            = "Replace quotes with unescaping and variable concatenation";
+    public static final char   CHAR_VERTICAL_TAB         = (char) 11;
+    public static final char   CHAR_ESC                  = (char) 27;
+    public static final char   CHAR_NEWLINE              = '\n';
+    public static final char   CHAR_CARRIAGE_RETURN      = '\r';
+    public static final char   CHAR_TAB                  = '\t';
+    public static final char   CHAR_FORM_FEED            = '\f';
+    public static final char   CHAR_BACKSLASH            = '\\';
+    public static final char   CHAR_DOUBLE_QUOTE         = '"';
+    public static final char   CHAR_SINGLE_QUOTE         = '\'';
+    public static final char   CHAR_LEFT_SQUARE_BRACKET  = '[';
+    public static final char   CHAR_RIGHT_SQUARE_BRACKET = ']';
+    public static final char   CHAR_DOT                  = '.';
+    public static final char   CHAR_LCASE_E              = 'e';
+    public static final char   CHAR_LCASE_F              = 'f';
+    public static final char   CHAR_LCASE_N              = 'n';
+    public static final char   CHAR_LCASE_R              = 'r';
+    public static final char   CHAR_LCASE_T              = 't';
+    public static final char   CHAR_LCASE_V              = 'v';
+    public static final char   CHAR_LCASE_X              = 'x';
+    public static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
+    public static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
 
     @NotNull
     @Override
@@ -69,6 +62,7 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) {
         //noinspection SimplifiableIfStatement
         if (!PhpWorkaroundUtil.isIntentionAvailable(psiElement)) return false;
+        // TODO hide this intention on empty string
         return getPhpDoubleQuotedStringExpression(psiElement) != null;
     }
 
@@ -85,7 +79,6 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
         ASTNode stringExpressionAstNode = stringLiteralExpression.getNode();
         if (stringExpressionAstNode == null) return null;
         ASTNode[] stringLiteralExpressionPieces = stringExpressionAstNode.getChildren(null);
-        // TODO does this happen on empty string? if so, we should replace the empty string with a single quoted one, or maybe hide this intention?
         if (stringLiteralExpressionPieces.length == 0) return null;
         if (stringLiteralExpressionPieces.length > 1) {
             /* the string literal expression PSI has several children when there are embedded variables or expressions,
@@ -96,7 +89,7 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
                 IElementType pieceType = stringLiteralExpressionPiece.getElementType();
                 // skip delimiter quotes
                 if (pieceType == PhpTokenTypes.chLDOUBLE_QUOTE ||
-                    pieceType == PhpTokenTypes.chRDOUBLE_QUOTE) continue;
+                    pieceType == PhpTokenTypes.chRDOUBLE_QUOTE) { continue; }
                 if (pieceType == PhpTokenTypes.STRING_LITERAL) {
                     // ASTNode is a piece of textual content of the string
                     String stringPieceContent = stringLiteralExpressionPiece.getText();
@@ -166,125 +159,111 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     }
 
     private String unescapePhpDoubleQuotedStringContent(String escapedContent) {
+
+        CharEnumeration charEnumeration = new CharEnumeration(escapedContent.toCharArray());
         StringBuilder unescapedContentBuffer = new StringBuilder();
-        EscapingState unescapingState = EscapingState.ReadingNewCharacter;
-        StringBuilder currentUnescapeBuffer = new StringBuilder();
-        for (char currentCharacter : escapedContent.toCharArray()) {
-            boolean currentCharIsDigit = Character.isDigit(currentCharacter);
-            // ReadingPotentialEscapeSequence means we have just found a backslash so next character will be checked
-            // for matching any valid escape sequence
-            if (unescapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharIsDigit) {
-                // detected decimal character escape sequence
-                unescapingState = EscapingState.ReadingDecimalCharEscape;
-            }
-            if (unescapingState == EscapingState.ReadingDecimalCharEscape) {
-                if (currentCharIsDigit) {
-                    currentUnescapeBuffer.append(currentCharacter);
-                }
-                if (!currentCharIsDigit || currentUnescapeBuffer.length() == 3) {
-                    // decimal sequence broken or max length reached, process current buffer and empty it
-                    unescapedContentBuffer.append((char) Integer.parseInt(currentUnescapeBuffer.toString()));
-                    currentUnescapeBuffer.setLength(0);
-                    // stop decimal sequence reading
-                    unescapingState = EscapingState.ReadingNewCharacter;
-                    if (currentCharIsDigit) {
-                        // current character has been processed as part of the decimal sequence, jump to next character
-                        continue;
+
+        if (charEnumeration.hasMoreElements()) {
+            char currentChar = charEnumeration.nextElement();
+            // semaphore for exiting the loop when reached end of string
+            boolean endOfString = false;
+            // loop while parsing the string characters
+            do {
+                if (currentChar == CHAR_BACKSLASH && charEnumeration.hasMoreElements()) {
+                    // check if backslash is part of an escape sequence
+                    currentChar = charEnumeration.nextElement();
+                    if (Character.toString(currentChar).matches(REGEXP_CHAR_IS_OCTAL)) {
+                        // from one to three digits will make up an octal escape sequence
+                        String octalCode = String.valueOf(currentChar);
+                        if (charEnumeration.hasMoreElements()) {
+                            currentChar = charEnumeration.nextElement();
+                            if (Character.toString(currentChar).matches(REGEXP_CHAR_IS_OCTAL)) {
+                                octalCode += String.valueOf(currentChar);
+                                if (charEnumeration.hasMoreElements()) {
+                                    currentChar = charEnumeration.nextElement();
+                                    if (Character.toString(currentChar).matches(REGEXP_CHAR_IS_OCTAL)) {
+                                        octalCode += String.valueOf(currentChar);
+                                    }
+                                }
+                            }
+                        }
+                        unescapedContentBuffer.append((char) Integer.parseInt(octalCode, 8));
+                        // if last read character wasn't part of the octal escape sequence, loop and re process it
+                        if (!Character.toString(currentChar).matches(REGEXP_CHAR_IS_OCTAL)) continue;
+                    } else {
+                        switch (currentChar) {
+                            case CHAR_LCASE_X:
+                                // check if backslash-x is part of an hex escape sequence
+                                boolean moreElements = charEnumeration.hasMoreElements();
+                                if (moreElements) {
+                                    currentChar = charEnumeration.nextElement();
+                                }
+                                if (moreElements && Character.toString(currentChar).matches(REGEXP_CHAR_IS_HEX)) {
+                                    // one or two hex characters will make up an hex escape sequence
+                                    String hexCode = String.valueOf(currentChar);
+                                    if (charEnumeration.hasMoreElements()) {
+                                        currentChar = charEnumeration.nextElement();
+                                        if (Character.toString(currentChar).matches(REGEXP_CHAR_IS_HEX)) {
+                                            hexCode += String.valueOf(currentChar);
+                                        }
+                                    }
+                                    unescapedContentBuffer.append((char) Integer.parseInt(hexCode, 16));
+                                    /* if last read character wasn't part of the hex escape sequence, loop and re
+                                     * process it */
+                                    if (!Character.toString(currentChar).matches(REGEXP_CHAR_IS_HEX)) continue;
+                                } else {
+                                    /* since next character don't make up an hex sequence, output both the backslash
+                                     * and the x, then if next character do exist, loop and re process it */
+                                    unescapedContentBuffer.append(CHAR_BACKSLASH);
+                                    unescapedContentBuffer.append(CHAR_LCASE_X);
+                                    if (moreElements) continue;
+                                }
+                                break;
+                            case CHAR_LCASE_N:
+                                unescapedContentBuffer.append(CHAR_NEWLINE);
+                                break;
+                            case CHAR_LCASE_R:
+                                unescapedContentBuffer.append(CHAR_CARRIAGE_RETURN);
+                                break;
+                            case CHAR_LCASE_T:
+                                unescapedContentBuffer.append(CHAR_TAB);
+                                break;
+                            case CHAR_LCASE_V:
+                                unescapedContentBuffer.append(CHAR_VERTICAL_TAB);
+                                break;
+                            case CHAR_LCASE_E:
+                                unescapedContentBuffer.append(CHAR_ESC);
+                                break;
+                            case CHAR_LCASE_F:
+                                unescapedContentBuffer.append(CHAR_FORM_FEED);
+                                break;
+                            case CHAR_BACKSLASH:
+                                unescapedContentBuffer.append(CHAR_BACKSLASH);
+                                break;
+                            case CHAR_DOUBLE_QUOTE:
+                                unescapedContentBuffer.append(CHAR_DOUBLE_QUOTE);
+                                break;
+                            default:
+                                // potential escape sequence wasn't so, so output both the backslash and the character
+                                unescapedContentBuffer.append(CHAR_BACKSLASH);
+                                unescapedContentBuffer.append(currentChar);
+                                break;
+                        }
                     }
-                    // else since current character wasn't part of the decimal sequence, let it be normally processed on
-                    // the ReadingNewCharacter block
-                }
-            }
-            if (unescapingState == EscapingState.ReadingPotentialEscapeSequence && currentCharacter == 'x') {
-                // maybe hex character sequence detected, jump to next character to check for that
-                unescapingState = EscapingState.ReadingPotentialHexCharEscape;
-                continue;
-            }
-            if (unescapingState == EscapingState.ReadingPotentialHexCharEscape) {
-                // we have just found \x, so check if now follows an hex sequence
-                if (Character.toString(currentCharacter).matches(REGEXP_TEST_HEX_CHAR)) {
-                    // verified it's an hex char sequence, let the character be processed as part of it on the
-                    // ReadingHexCharEscape block
-                    unescapingState = EscapingState.ReadingHexCharEscape;
                 } else {
-                    // no hex sequence follows, so just output the backslash and the wrongly escaped x, and let current
-                    // character  be normally processed on the ReadingNewCharacter block
-                    unescapedContentBuffer.append("\\x");
-                    unescapingState = EscapingState.ReadingNewCharacter;
+                    unescapedContentBuffer.append(currentChar);
                 }
-            }
-            if (unescapingState == EscapingState.ReadingHexCharEscape) {
-                boolean currentCharIsHex = Character.toString(currentCharacter).matches(REGEXP_TEST_HEX_CHAR);
-                if (currentCharIsHex) {
-                    currentUnescapeBuffer.append(currentCharacter);
-                }
-                if (!currentCharIsHex || currentUnescapeBuffer.length() == 2) {
-                    // hex sequence broken or max length reached, process current buffer and empty it
-                    unescapedContentBuffer.append((char) Integer.parseInt(currentUnescapeBuffer.toString(), 16));
-                    currentUnescapeBuffer.setLength(0);
-                    // stop hex sequence reading
-                    unescapingState = EscapingState.ReadingNewCharacter;
-                    if (currentCharIsHex) {
-                        // current character has been processed as part of the hex sequence, jump to next character
-                        continue;
-                    }
-                    // else since current character wasn't part of the hex sequence, let it be normally processed on
-                    // the ReadingNewCharacter block
-                }
-            }
-            if (unescapingState == EscapingState.ReadingPotentialEscapeSequence) {
-                // last character was a backslash so check if current character is a valid escape sequence
-                switch (currentCharacter) {
-                    case CHAR_N:
-                        unescapedContentBuffer.append(CHAR_NEWLINE);
-                        break;
-                    case CHAR_R:
-                        unescapedContentBuffer.append(CHAR_CARRIAGE_RETURN);
-                        break;
-                    case CHAR_T:
-                        unescapedContentBuffer.append(CHAR_TAB);
-                        break;
-                    case CHAR_V:
-                        unescapedContentBuffer.append(CHAR_VERTICAL_TAB);
-                        break;
-                    case CHAR_E:
-                        unescapedContentBuffer.append(CHAR_ESC);
-                        break;
-                    case CHAR_F:
-                        unescapedContentBuffer.append(CHAR_FORM_FEED);
-                        break;
-                    case CHAR_BACKSLASH:
-                        unescapedContentBuffer.append(CHAR_BACKSLASH);
-                        break;
-                    case CHAR_DOUBLE_QUOTE:
-                        unescapedContentBuffer.append(CHAR_DOUBLE_QUOTE);
-                        break;
-                    default:
-                        // escape sequence was bad, so output both the backslash and the wrongly escaped character
-                        unescapedContentBuffer.append(CHAR_BACKSLASH);
-                        unescapedContentBuffer.append(currentCharacter);
-                        break;
-                }
-                // reset reading mode and jump to next character
-                unescapingState = EscapingState.ReadingNewCharacter;
-                continue;
-            }
-            // normal processing of character: if it's backslash a new escape sequence begins, otherwise character is
-            // outputted as is
-            if (unescapingState == EscapingState.ReadingNewCharacter) {
-                if (currentCharacter == CHAR_BACKSLASH) {
-                    unescapingState = EscapingState.ReadingPotentialEscapeSequence;
+                if (charEnumeration.hasMoreElements()) {
+                    currentChar = charEnumeration.nextElement();
                 } else {
-                    unescapedContentBuffer.append(currentCharacter);
+                    endOfString = true;
                 }
-            }
+            } while (!endOfString);
         }
         return unescapedContentBuffer.toString();
     }
 
     private String escapePhpSingleQuotedStringContent(String text) {
-        @SuppressWarnings("UnnecessaryLocalVariable")
-        String singleQuotesAndBackslashEscaped = text.replaceAll("(\\\\|')", "\\\\$1");
-        return singleQuotesAndBackslashEscaped;
+        return text.replaceAll("('|\\\\(?=')|\\\\$)", "\\\\$1");
     }
 }

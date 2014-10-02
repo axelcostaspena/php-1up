@@ -77,4 +77,20 @@ public class PhpReplaceQuotesWithConcatenationIntentionTest extends LightCodeIns
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testPotentialEscapeSequenceSurpassesStringEnd() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testDifferentiateOctalCodeFromDecimalDigits() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testOctalEscapeSequencesLength() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testHexEscapeSequencesLength() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
