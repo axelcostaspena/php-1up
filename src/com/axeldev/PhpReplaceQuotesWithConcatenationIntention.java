@@ -135,6 +135,8 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
         CharEnumeration charEnumeration = new CharEnumeration(escapedContent.toCharArray());
         StringBuilder unescapedContentBuffer = new StringBuilder();
 
+        // parse double string contents
+        // see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double
         if (charEnumeration.hasMoreElements()) {
             char currentChar = charEnumeration.nextElement();
             // semaphore for exiting the loop when reached end of string
