@@ -21,36 +21,30 @@ import java.util.*;
 
 public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIntentionAction {
 
-    public static final String FAMILY_NAME               = "Replace quotes";
-    // TODO mention also variable concatenation, make title dynamic?
-    public static final String INTENTION_NAME            = "Replace quotes with unescaping and variable concatenation";
-    public static final char   CHAR_VERTICAL_TAB         = (char) 11;
-    public static final char   CHAR_ESC                  = (char) 27;
-    public static final char   CHAR_NEWLINE              = '\n';
-    public static final char   CHAR_CARRIAGE_RETURN      = '\r';
-    public static final char   CHAR_TAB                  = '\t';
-    public static final char   CHAR_FORM_FEED            = '\f';
-    public static final char   CHAR_BACKSLASH            = '\\';
-    public static final char   CHAR_DOUBLE_QUOTE         = '"';
-    public static final char   CHAR_SINGLE_QUOTE         = '\'';
-    public static final char   CHAR_LEFT_SQUARE_BRACKET  = '[';
-    public static final char   CHAR_RIGHT_SQUARE_BRACKET = ']';
-    public static final char   CHAR_DOT                  = '.';
-    public static final char   CHAR_LCASE_E              = 'e';
-    public static final char   CHAR_LCASE_F              = 'f';
-    public static final char   CHAR_LCASE_N              = 'n';
-    public static final char   CHAR_LCASE_R              = 'r';
-    public static final char   CHAR_LCASE_T              = 't';
-    public static final char   CHAR_LCASE_V              = 'v';
-    public static final char   CHAR_LCASE_X              = 'x';
-    public static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
-    public static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
-
-    @NotNull
-    @Override
-    public String getText() {
-        return INTENTION_NAME;
-    }
+    public static final String FAMILY_NAME                  = "Replace quotes";
+    public static final String INTENTION_NAME_NO_VARS       = "Replace quotes with unescaping";
+    public static final String INTENTION_NAME_EMBEDDED_VARS = "Replace quotes with unescaping and variable concatenation";
+    public static final char   CHAR_VERTICAL_TAB            = (char) 11;
+    public static final char   CHAR_ESC                     = (char) 27;
+    public static final char   CHAR_NEWLINE                 = '\n';
+    public static final char   CHAR_CARRIAGE_RETURN         = '\r';
+    public static final char   CHAR_TAB                     = '\t';
+    public static final char   CHAR_FORM_FEED               = '\f';
+    public static final char   CHAR_BACKSLASH               = '\\';
+    public static final char   CHAR_DOUBLE_QUOTE            = '"';
+    public static final char   CHAR_SINGLE_QUOTE            = '\'';
+    public static final char   CHAR_LEFT_SQUARE_BRACKET     = '[';
+    public static final char   CHAR_RIGHT_SQUARE_BRACKET    = ']';
+    public static final char   CHAR_DOT                     = '.';
+    public static final char   CHAR_LCASE_E                 = 'e';
+    public static final char   CHAR_LCASE_F                 = 'f';
+    public static final char   CHAR_LCASE_N                 = 'n';
+    public static final char   CHAR_LCASE_R                 = 'r';
+    public static final char   CHAR_LCASE_T                 = 't';
+    public static final char   CHAR_LCASE_V                 = 'v';
+    public static final char   CHAR_LCASE_X                 = 'x';
+    public static final String REGEXP_CHAR_IS_OCTAL         = "[0-7]";
+    public static final String REGEXP_CHAR_IS_HEX           = "[0-9A-Fa-f]";
 
     @NotNull
     @Override
@@ -60,10 +54,12 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) {
-        //noinspection SimplifiableIfStatement
         if (!PhpWorkaroundUtil.isIntentionAvailable(psiElement)) return false;
-        // TODO hide this intention on empty string
-        return getPhpDoubleQuotedStringExpression(psiElement) != null;
+        PsiElement stringLiteralExpression = getPhpDoubleQuotedStringExpression(psiElement);
+        if (stringLiteralExpression == null || isPhpDoubleQuotedEmptyString(psiElement)) return false;
+        String intentionText = stringLiteralExpression.getNode().getChildren(null).length > 1 ? INTENTION_NAME_EMBEDDED_VARS : INTENTION_NAME_NO_VARS;
+        this.setText(intentionText);
+        return true;
     }
 
     @Override
@@ -73,6 +69,26 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
         PsiElement singleQuoteExpression = convertPhpDoubleQuotedStringToSingleQuoteAndExpressionConcatenation(project, psiElement, stringLiteralExpression);
         if (singleQuoteExpression == null) return;
         stringLiteralExpression.replace(singleQuoteExpression);
+    }
+
+    private PsiElement getPhpDoubleQuotedStringExpression(PsiElement psiElement) {
+        if (psiElement instanceof PhpFile) return null;
+        if (psiElement instanceof StringLiteralExpression) {
+            PsiElement firstChild = psiElement.getFirstChild();
+            if (firstChild != null) {
+                ASTNode childAstNode = firstChild.getNode();
+                IElementType childElementType = childAstNode.getElementType();
+                if (childElementType == PhpTokenTypes.STRING_LITERAL || childElementType == PhpTokenTypes.chLDOUBLE_QUOTE) {
+                    return psiElement;
+                }
+            }
+        }
+        PsiElement parentPsi = psiElement.getParent();
+        return parentPsi != null ? getPhpDoubleQuotedStringExpression(parentPsi) : null;
+    }
+
+    private boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
+        return psiElement.getText().equals("\"\"");
     }
 
     private PsiElement convertPhpDoubleQuotedStringToSingleQuoteAndExpressionConcatenation(Project project, PsiElement psiElement, PsiElement stringLiteralExpression) {
@@ -112,50 +128,6 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
             String phpSingleQuotedString = CHAR_SINGLE_QUOTE + singleQuoteEscapedContent + CHAR_SINGLE_QUOTE;
             return PhpPsiElementFactory.createPhpPsiFromText(psiElement.getProject(), StringLiteralExpression.class, phpSingleQuotedString);
         }
-    }
-
-    private String cleanupStringEmbeddedExpression(ASTNode astNode) {
-        ASTNode[] children = astNode.getChildren(null);
-        if (children.length == 3 &&
-            children[0].getElementType() == PhpTokenTypes.chLBRACE &&
-            children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
-            // it's a variable or expression which was wrapped in curly braces in the string
-            String expression = astNode.getText();
-            return expression.substring(1, expression.length() - 1);
-        } else if (children[0].getPsi() instanceof ArrayAccessExpression) {
-            /* it's an array access expression, and since it's the only child it isn't wrapped in curly braces
-             * so it's using the unquoted syntax on the access key: take the identifier part, the left square bracket,
-             * wrap the key in quotes and finally take the right square bracket */
-            ASTNode[] arrayAccessExpressionChildren = children[0].getChildren(null);
-            String identifier = arrayAccessExpressionChildren[0].getText();
-            String arrayAccessKey = arrayAccessExpressionChildren[2].getText();
-            return identifier + CHAR_LEFT_SQUARE_BRACKET + CHAR_SINGLE_QUOTE + arrayAccessKey + CHAR_SINGLE_QUOTE + CHAR_RIGHT_SQUARE_BRACKET;
-        } else {
-            // if none of the previous condition is matched, then it's a simple variable embedding
-            return astNode.getText();
-        }
-    }
-
-    private PsiElement getPhpDoubleQuotedStringExpression(PsiElement psiElement) {
-        if (psiElement instanceof PhpFile) return null;
-        if (psiElement instanceof StringLiteralExpression) {
-            PsiElement firstChild = psiElement.getFirstChild();
-            if (firstChild != null) {
-                ASTNode childAstNode = firstChild.getNode();
-                IElementType childElementType = childAstNode.getElementType();
-                if (childElementType == PhpTokenTypes.STRING_LITERAL || childElementType == PhpTokenTypes.chLDOUBLE_QUOTE) {
-                    return psiElement;
-                }
-            }
-        }
-        PsiElement parentPsi = psiElement.getParent();
-        return parentPsi != null ? getPhpDoubleQuotedStringExpression(parentPsi) : null;
-    }
-
-    private String getPhpDoubleQuotedStringUnescapedContent(PsiElement psiElement) {
-        String phpStringLiteral = psiElement.getText();
-        String escapedContent = phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
-        return unescapePhpDoubleQuotedStringContent(escapedContent);
     }
 
     private String unescapePhpDoubleQuotedStringContent(String escapedContent) {
@@ -265,5 +237,33 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
 
     private String escapePhpSingleQuotedStringContent(String text) {
         return text.replaceAll("('|\\\\(?=')|\\\\$)", "\\\\$1");
+    }
+
+    private String cleanupStringEmbeddedExpression(ASTNode astNode) {
+        ASTNode[] children = astNode.getChildren(null);
+        if (children.length == 3 &&
+            children[0].getElementType() == PhpTokenTypes.chLBRACE &&
+            children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
+            // it's a variable or expression which was wrapped in curly braces in the string
+            String expression = astNode.getText();
+            return expression.substring(1, expression.length() - 1);
+        } else if (children[0].getPsi() instanceof ArrayAccessExpression) {
+            /* it's an array access expression, and since it's the only child it isn't wrapped in curly braces
+             * so it's using the unquoted syntax on the access key: take the identifier part, the left square bracket,
+             * wrap the key in quotes and finally take the right square bracket */
+            ASTNode[] arrayAccessExpressionChildren = children[0].getChildren(null);
+            String identifier = arrayAccessExpressionChildren[0].getText();
+            String arrayAccessKey = arrayAccessExpressionChildren[2].getText();
+            return identifier + CHAR_LEFT_SQUARE_BRACKET + CHAR_SINGLE_QUOTE + arrayAccessKey + CHAR_SINGLE_QUOTE + CHAR_RIGHT_SQUARE_BRACKET;
+        } else {
+            // if none of the previous condition is matched, then it's a simple variable embedding
+            return astNode.getText();
+        }
+    }
+
+    private String getPhpDoubleQuotedStringUnescapedContent(PsiElement psiElement) {
+        String phpStringLiteral = psiElement.getText();
+        String escapedContent = phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
+        return unescapePhpDoubleQuotedStringContent(escapedContent);
     }
 }

@@ -12,7 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 
 public class PhpReplaceQuotesWithConcatenationIntentionTest extends LightCodeInsightFixtureTestCase {
-    public static final String TEST_INTENTION_NAME = PhpReplaceQuotesWithConcatenationIntention.INTENTION_NAME;
+    public static final String TEST_INTENTION_NAME_NO_VARS       = PhpReplaceQuotesWithConcatenationIntention.INTENTION_NAME_NO_VARS;
+    public static final String TEST_INTENTION_NAME_EMBEDDED_VARS = PhpReplaceQuotesWithConcatenationIntention.INTENTION_NAME_EMBEDDED_VARS;
 
     private static class MyDescriptor extends DefaultLightProjectDescriptor {
         @Override
@@ -40,57 +41,58 @@ public class PhpReplaceQuotesWithConcatenationIntentionTest extends LightCodeIns
 
     private void phpIntentionTest(String testName, String intentionName) {
         myFixture.configureByFile("before" + testName + ".php");
-        IntentionAction intention = myFixture.findSingleIntention(intentionName);
+        IntentionAction intention = myFixture.getAvailableIntention(intentionName);
+        assert intention != null;
         myFixture.launchAction(intention);
         myFixture.checkResultByFile("after" + testName + ".php");
     }
 
     public void testIntentionDescriptionExample() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
     public void testSimpleString() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
     public void testEscapeSequences() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
     public void testEmbeddedVar() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
     public void testEmbeddedVarWithBraces() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
     public void testEmbeddedArrayWithBraces() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
     public void testEmbeddedArrayWithUnquotedKeySyntax() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
     public void testEmbeddedMethodCallingExpression() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
     public void testPotentialEscapeSequenceSurpassesStringEnd() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
     public void testDifferentiateOctalCodeFromDecimalDigits() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
     public void testOctalEscapeSequencesLength() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
     public void testHexEscapeSequencesLength() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
 }
