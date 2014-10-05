@@ -1,0 +1,3 @@
+<?php
+
+$foo = "\xA<caret>\x21\x410\x";
