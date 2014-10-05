@@ -5,7 +5,14 @@
     <vendor email="axl.coding@gmail.com" url="https://github.com/axelcostaspena">Áxel Costas Pena</vendor>
 
     <description><![CDATA[
-        <p>Provides a growing collection of inspections, intentions and other utils for PHP development on IntelliJ based IDEs.</p>
+        <h1>PHP 1Up!</h1>
+
+        <p><a href="https://github.com/axelcostaspena/php-1up">Source code</a> |
+            <a href="https://github.com/axelcostaspena/php-1up/issues">Bug tracker page</a> |
+            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NGHQSNJCYUQ2E">Give me some love!</a></p>
+        <br/>
+        <p>PHP 1Up! is a plugin for IntelliJ based IDEs which provides a growing collection of inspections, intentions and other utils for PHP development.</p>
+        <br/>
         <p>Features:</p>
         <ul>
             <li>Convert a single quoted string to a double quoted one completely keeping semantics.</li>
@@ -14,12 +21,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        Change history:
-        <dl>
-            <dt>v0.1</dt>
-            <dd>Add intention "Replace quotes with escaping" as an alternative to "Replace quotes" (WI-13801)</dd>
-            <dd>Add intention "Replace quotes with unescaping and variable concatenation" as an alternative to "Replace quotes" (WI-13801)</dd>
-        </dd>
+        <p>Change history:</p>
+        <br/>
+        <p>v0.1</p>
+        <ul>
+            <li>Add intention "Replace quotes with escaping" as an alternative to "Replace quotes" (<a href="https://youtrack.jetbrains.com/issue/WI-13801">WI-13801</a>)</li>
+            <li>Add intention "Replace quotes with unescaping and variable concatenation" as an alternative to "Replace quotes" (<a href="https://youtrack.jetbrains.com/issue/WI-13801">WI-13801</a>)</li>
+        </ul>
     ]]>
     </change-notes>
 
