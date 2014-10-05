@@ -9,7 +9,7 @@
 
         <p><a href="https://github.com/axelcostaspena/php-1up">Source code</a> |
             <a href="https://github.com/axelcostaspena/php-1up/issues">Bug tracker page</a> |
-            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NGHQSNJCYUQ2E">Give me some love!</a></p>
+            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NGHQSNJCYUQ2E" title="Donate">Give me some love!</a></p>
         <br/>
         <p>PHP 1Up! is a plugin for IntelliJ based IDEs which provides a growing collection of inspections, intentions and other utils for PHP development.</p>
         <br/>
