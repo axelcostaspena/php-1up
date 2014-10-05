@@ -39,31 +39,32 @@ public class PhpReplaceQuotesWithEscapingIntentionTest extends LightCodeInsightF
         return new File(testPath, "../../..");
     }
 
-    private void basePhpIntentionTest(String testName, String intentionName) {
+    private void phpIntentionTest(String testName, String intentionName) {
         myFixture.configureByFile("before" + testName + ".php");
-        IntentionAction intention = myFixture.findSingleIntention(intentionName);
+        IntentionAction intention = myFixture.getAvailableIntention(intentionName);
+        assert intention != null;
         myFixture.launchAction(intention);
         myFixture.checkResultByFile("after" + testName + ".php");
     }
 
     public void testIntentionDescriptionExample() {
-        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
     public void testSimpleString() {
-        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
     public void testEscapeSequences() {
-        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
     public void testStringEndingWithBackslash() {
-        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
     public void testVariableVariable() {
-        basePhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
 }

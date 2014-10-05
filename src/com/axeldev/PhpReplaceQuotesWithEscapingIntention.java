@@ -42,14 +42,19 @@ public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntenti
         if (!isPhpSingleQuotedString(psiElement)) return;
         PsiElement parentPsi = psiElement.getParent();
         if (!(parentPsi instanceof StringLiteralExpression)) return;
-        String stringContent = getPhpSingleQuotedStringContent(psiElement);
-        StringLiteralExpression phpDoubleQuotedStringLiteralPsi = createPhpDoubleQuotedStringPsiFromContent(psiElement.getProject(), stringContent);
+        StringLiteralExpression phpDoubleQuotedStringLiteralPsi = convertPhpSingleQuotedStringToDoubleQuotedString(psiElement);
+        if (phpDoubleQuotedStringLiteralPsi == null) return;
         parentPsi.replace(phpDoubleQuotedStringLiteralPsi);
     }
 
     private boolean isPhpSingleQuotedString(PsiElement psiElement) {
         ASTNode astNode = psiElement.getNode();
         return astNode != null && astNode.getElementType() == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE;
+    }
+
+    private StringLiteralExpression convertPhpSingleQuotedStringToDoubleQuotedString(PsiElement psiElement) {
+        String stringContent = getPhpSingleQuotedStringContent(psiElement);
+        return createPhpDoubleQuotedStringPsiFromContent(psiElement.getProject(), stringContent);
     }
 
     private String getPhpSingleQuotedStringContent(PsiElement psiElement) {
