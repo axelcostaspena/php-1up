@@ -5,16 +5,23 @@
     <vendor email="axl.coding@gmail.com" url="https://github.com/axelcostaspena">Áxel Costas Pena</vendor>
 
     <description><![CDATA[
-        Provides a growing collection of inspections, intentions and other utils for PHP development on IntelliJ based IDEs.
+        <p>Provides a growing collection of inspections, intentions and other utils for PHP development on IntelliJ based IDEs.</p>
+        <p>Features:</p>
+        <ul>
+            <li>Convert a single quoted string to a double quoted one completely keeping semantics.</li>
+            <li>Convert a double quoted string to a single quoted one completely keeping semantics by concatenating the embedded variables.</li>
+        </ul>
     ]]></description>
 
     <change-notes><![CDATA[
         Change history:
-        <ul>
-            <li>v0.1: Plugin structure</li>
-        </ul>
+        <dl>
+            <dt>v0.1</dt>
+            <dd>Add intention "Replace quotes with escaping" as an alternative to "Replace quotes" (WI-13801)</dd>
+            <dd>Add intention "Replace quotes with unescaping and variable concatenation" as an alternative to "Replace quotes" (WI-13801)</dd>
+        </dd>
     ]]>
-  </change-notes>
+    </change-notes>
 
     <!-- please see http://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
     <idea-version since-build="131"/>

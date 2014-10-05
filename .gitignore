@@ -1,9 +1,13 @@
 ### IntelliJ IDEA
-
 # Directory-based project format
 .idea/
-
 # File-based project format
 *.ipr
 *.iws
 *.iml
+
+### Plugin-specific files:
+# Compiler output
+out/
+# PHP 1Up! deployment file
+PHP 1Up!.jar
