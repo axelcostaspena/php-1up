@@ -5,9 +5,9 @@
 PHP 1Up! is a plugin for IntelliJ based IDEs which provides a growing collection of inspections, intentions and other 
 utils for PHP development.
 
-[Source code](https://github.com/axelcostaspena/php-1up) |
-[Bug tracker page](https://github.com/axelcostaspena/php-1up/issues) |
-![Give me some love!](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif "Donate")
+[Source code](https://github.com/axelcostaspena/php-1up) •
+[Bug tracker page](https://github.com/axelcostaspena/php-1up/issues) •
+[Give me some love! ![PayPal Donate button](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif "Donate")](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NGHQSNJCYUQ2E)
 
 ## Features
 
