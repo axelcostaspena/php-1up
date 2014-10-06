@@ -95,4 +95,9 @@ public class PhpReplaceQuotesWithConcatenationIntentionTest extends LightCodeIns
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
+    // test for #1
+    public void testUnescapeEscapedDollarSign() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
+    }
+
 }
