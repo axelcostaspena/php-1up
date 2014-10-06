@@ -35,6 +35,7 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
     public static final char   CHAR_SINGLE_QUOTE            = '\'';
     public static final char   CHAR_LEFT_SQUARE_BRACKET     = '[';
     public static final char   CHAR_RIGHT_SQUARE_BRACKET    = ']';
+    public static final char   CHAR_DOLLAR                  = '$';
     public static final char   CHAR_DOT                     = '.';
     public static final char   CHAR_LCASE_E                 = 'e';
     public static final char   CHAR_LCASE_F                 = 'f';
@@ -212,10 +213,9 @@ public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIn
                                 unescapedContentBuffer.append(CHAR_FORM_FEED);
                                 break;
                             case CHAR_BACKSLASH:
-                                unescapedContentBuffer.append(CHAR_BACKSLASH);
-                                break;
                             case CHAR_DOUBLE_QUOTE:
-                                unescapedContentBuffer.append(CHAR_DOUBLE_QUOTE);
+                            case CHAR_DOLLAR:
+                                unescapedContentBuffer.append(currentChar);
                                 break;
                             default:
                                 // potential escape sequence wasn't so, so output both the backslash and the character
