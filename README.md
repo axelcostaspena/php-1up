@@ -16,6 +16,10 @@ utils for PHP development.
 
 ## Changelog
 
+version 0.1.1
+
+* Fix [#1](https://github.com/axelcostaspena/php-1up/issues/1): Unescaping misses escaped dollar sign
+
 version 0.1
 
 * Add intention "Replace quotes with escaping" as an alternative to "Replace quotes" ([WI-13801](https://youtrack.jetbrains.com/issue/WI-13801))
