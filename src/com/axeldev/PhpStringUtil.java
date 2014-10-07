@@ -1,5 +1,6 @@
 package com.axeldev;
 
+import com.google.common.base.Function;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
@@ -10,8 +11,11 @@ import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.ArrayAccessExpression;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PhpStringUtil {
-    public static final char   CHAR_VERTICAL_TAB            = (char) 11;
+    public static final char   CHAR_VERTICAL_TAB         = (char) 11;
     public static final char   CHAR_ESC                  = (char) 27;
     public static final char   CHAR_NEWLINE              = '\n';
     public static final char   CHAR_CARRIAGE_RETURN      = '\r';
@@ -36,6 +40,13 @@ public class PhpStringUtil {
 
     static boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
         return psiElement.getText().equals("\"\"");
+    }
+
+    static boolean isPhpDoubleQuotedComplexString(PsiElement psiElement) {
+        ASTNode astNode = psiElement.getNode();
+        if (astNode == null) return false;
+        ASTNode[] children = astNode.getChildren(null);
+        return children != null && children.length > 1;
     }
 
     static boolean isPhpSingleQuotedString(PsiElement psiElement) {
@@ -69,6 +80,49 @@ public class PhpStringUtil {
         String phpStringLiteralText = psiElement.getText();
         String escapedContent = phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
         return unescapePhpSingleQuotedStringContent(escapedContent);
+    }
+
+    /**
+     * Gets the child nodes of a PHP double quoted string psiElement and maps them to a List of String values. Allows to
+     * specify a callback function for processing string literal fragments, and other for embedded variables and
+     * expressions. Delimiter double quotes are omitted since their presence is constant.
+     *
+     * @param psiElement               The PHP double quoted string literal whose nodes are wanted to map
+     * @param stringFragmentMapper     A Function implementation which gets a String from the ASTNode of any string
+     *                                 literal fragment on the PHP string. Any node which lead to a null return value
+     *                                 will be omitted from the result.
+     * @param embeddedExpressionMapper A Function implementation which gets a String from the ASTNode of any variable or
+     *                                 expression embedded on the PHP string. Any node which lead to a null return value
+     *                                 will be omitted from the result.
+     * @return A List of String objects containing the results of sequentially applying the PHP string pieces to the
+     * provided Function implementations as determined by the node type.
+     */
+    public static List<String> mapPhpDoubleQuotedComplexStringContent(PsiElement psiElement, Function<ASTNode, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
+        ASTNode astNode = psiElement.getNode();
+        if (astNode == null) return null;
+        ASTNode[] children = astNode.getChildren(null);
+        // complex strings always have more than one child node
+        if (children.length <= 1) return null;
+        List<String> map = new ArrayList<String>();
+        for (ASTNode childNode : children) {
+            IElementType pieceType = childNode.getElementType();
+            // skip delimiter quotes
+            if (pieceType == PhpTokenTypes.chLDOUBLE_QUOTE || pieceType == PhpTokenTypes.chRDOUBLE_QUOTE) continue;
+            if (pieceType == PhpTokenTypes.STRING_LITERAL) {
+                // the ASTNode is a piece of textual content of the string
+                String stringFragmentResult = stringFragmentMapper.apply(childNode);
+                if (stringFragmentResult != null) {
+                    map.add(stringFragmentResult);
+                }
+            } else {
+                // the ASTNode is a variable or expression embedded in the string
+                String embeddedExpressionResult = embeddedExpressionMapper.apply(childNode);
+                if (embeddedExpressionResult != null) {
+                    map.add(embeddedExpressionResult);
+                }
+            }
+        }
+        return map;
     }
 
     static String unescapePhpDoubleQuotedStringContent(String escapedContent) {
@@ -232,4 +286,5 @@ public class PhpStringUtil {
         String phpStringLiteral = CHAR_SINGLE_QUOTE + escapedContent + CHAR_SINGLE_QUOTE;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
+
 }
