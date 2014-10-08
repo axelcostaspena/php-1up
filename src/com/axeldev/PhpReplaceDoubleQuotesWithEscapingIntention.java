@@ -15,11 +15,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class PhpReplaceQuotesWithConcatenationIntention extends PsiElementBaseIntentionAction {
+public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseIntentionAction {
 
     public static final String FAMILY_NAME                  = "Replace quotes";
-    public static final String INTENTION_NAME_NO_VARS       = "Replace quotes with unescaping";
-    public static final String INTENTION_NAME_EMBEDDED_VARS = "Replace quotes with unescaping and variable concatenation";
+    public static final String INTENTION_NAME_NO_VARS       = "Replace quotes with escaping";
+    public static final String INTENTION_NAME_EMBEDDED_VARS = "Replace quotes with escaping and variable concatenation";
 
     @NotNull
     @Override

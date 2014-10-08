@@ -11,9 +11,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
-public class PhpReplaceQuotesWithEscapingIntentionTest extends LightCodeInsightFixtureTestCase {
+public class PhpReplaceSingleQuotesWithEscapingIntentionTest extends LightCodeInsightFixtureTestCase {
 
-    public static final String TEST_INTENTION_NAME = PhpReplaceQuotesWithEscapingIntention.INTENTION_NAME;
+    public static final String TEST_INTENTION_NAME = PhpReplaceSingleQuotesWithEscapingIntention.INTENTION_NAME;
 
     private static class MyDescriptor extends DefaultLightProjectDescriptor {
         @Override
@@ -35,7 +35,7 @@ public class PhpReplaceQuotesWithEscapingIntentionTest extends LightCodeInsightF
     }
 
     private static File getProjectRootPath() {
-        String testPath = PathManager.getJarPathForClass(PhpReplaceQuotesWithEscapingIntention.class);
+        String testPath = PathManager.getJarPathForClass(PhpReplaceSingleQuotesWithEscapingIntention.class);
         return new File(testPath, "../../..");
     }
 

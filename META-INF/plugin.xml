@@ -51,11 +51,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
         <intentionAction>
-            <className>com.axeldev.PhpReplaceQuotesWithEscapingIntention</className>
+            <className>com.axeldev.PhpReplaceSingleQuotesWithEscapingIntention</className>
             <category>PHP</category>
         </intentionAction>
         <intentionAction>
-            <className>com.axeldev.PhpReplaceQuotesWithConcatenationIntention</className>
+            <className>com.axeldev.PhpReplaceDoubleQuotesWithEscapingIntention</className>
             <category>PHP</category>
         </intentionAction>
     </extensions>

@@ -9,7 +9,7 @@ import com.jetbrains.php.PhpWorkaroundUtil;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.jetbrains.annotations.NotNull;
 
-public class PhpReplaceQuotesWithEscapingIntention extends PsiElementBaseIntentionAction {
+public class PhpReplaceSingleQuotesWithEscapingIntention extends PsiElementBaseIntentionAction {
 
     public static final String FAMILY_NAME = "Replace quotes";
     public static final String INTENTION_NAME = "Replace quotes with escaping";
