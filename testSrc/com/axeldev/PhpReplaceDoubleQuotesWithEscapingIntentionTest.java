@@ -101,8 +101,12 @@ public class PhpReplaceDoubleQuotesWithEscapingIntentionTest extends LightCodeIn
     }
 
     // test for #8
-    public void testBackslashBeforeNewlineAndDollar() {
-        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
+    public void testBackslashBeforeNewlineAndEndOfFragment() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
+    }
+
+    public void testBackslashBeforeNewlineAndEndOfSingleQuotedString() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
 }
