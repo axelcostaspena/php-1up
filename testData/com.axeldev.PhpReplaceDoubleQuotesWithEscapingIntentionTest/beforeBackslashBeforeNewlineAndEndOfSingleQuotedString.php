@@ -1,4 +1,4 @@
 <?php
 
-$foo = 'foo\
+$foo = 'f<caret>oo\
 ';
