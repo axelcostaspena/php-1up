@@ -100,6 +100,15 @@ public class PhpReplaceDoubleQuotesWithEscapingIntentionTest extends LightCodeIn
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
     }
 
+    // test for #7
+    public void testConcatArrayNumericAccess() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
+    }
+
+    public void testDifferentiateDecimalFromOctalArrayIndices() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
+    }
+
     // test for #8
     public void testBackslashBeforeNewlineAndEndOfFragment() {
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_NO_VARS);
