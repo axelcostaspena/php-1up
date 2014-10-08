@@ -42,7 +42,7 @@ public class PhpReplaceDoubleQuotesWithEscapingIntentionTest extends LightCodeIn
     private void phpIntentionTest(String testName, String intentionName) {
         myFixture.configureByFile("before" + testName + ".php");
         IntentionAction intention = myFixture.getAvailableIntention(intentionName);
-        assert intention != null;
+        if (intention == null) throw new AssertionError("Intention \"" + intentionName + "\" is not available at specified document position");
         myFixture.launchAction(intention);
         myFixture.checkResultByFile("after" + testName + ".php");
     }
