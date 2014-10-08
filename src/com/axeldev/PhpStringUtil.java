@@ -267,8 +267,13 @@ public class PhpStringUtil {
              * wrap the key in quotes and finally take the right square bracket */
             ASTNode[] arrayAccessExpressionChildren = children[0].getChildren(null);
             String identifier = arrayAccessExpressionChildren[0].getText();
-            String arrayAccessKey = arrayAccessExpressionChildren[2].getText();
-            return identifier + CHAR_LEFT_SQUARE_BRACKET + CHAR_SINGLE_QUOTE + arrayAccessKey + CHAR_SINGLE_QUOTE + CHAR_RIGHT_SQUARE_BRACKET;
+            String arrayAccessIndex = arrayAccessExpressionChildren[2].getText();
+            if (!arrayAccessIndex.matches("\\A(0|[1-9][0-9]*)\\z")) {
+                /* index is not a decimal number, so it's a string literal in its special unquoted embedded syntax: add
+                 * missing quotes */
+                arrayAccessIndex = CHAR_SINGLE_QUOTE + arrayAccessIndex + CHAR_SINGLE_QUOTE;
+            }
+            return identifier + CHAR_LEFT_SQUARE_BRACKET + arrayAccessIndex + CHAR_RIGHT_SQUARE_BRACKET;
         } else {
             // if none of the previous condition is matched, then it's a simple variable embedding
             return astNode.getText();

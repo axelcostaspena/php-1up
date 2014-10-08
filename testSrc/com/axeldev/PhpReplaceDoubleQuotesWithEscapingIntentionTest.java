@@ -105,4 +105,8 @@ public class PhpReplaceDoubleQuotesWithEscapingIntentionTest extends LightCodeIn
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
     }
 
+    public void testDifferentiateDecimalFromOctalArrayIndices() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME_EMBEDDED_VARS);
+    }
+
 }
