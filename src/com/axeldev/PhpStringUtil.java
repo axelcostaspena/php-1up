@@ -37,6 +37,7 @@ public class PhpStringUtil {
     public static final char   CHAR_LCASE_X              = 'x';
     public static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
     public static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
+    public static final String REGEX_PHP_OCTAL_INTEGER   = "\\A0[0-9]+\\z";
 
     static boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
         return psiElement.getText().equals("\"\"");
@@ -260,22 +261,37 @@ public class PhpStringUtil {
             children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
             // it's a variable or expression which was wrapped in curly braces in the string
             String expression = astNode.getText();
+            // remove braces and return the expression as-is
             return expression.substring(1, expression.length() - 1);
         } else if (children[0].getPsi() instanceof ArrayAccessExpression) {
-            /* it's an array access expression, and since it's the only child it isn't wrapped in curly braces
-             * so it's using the unquoted syntax on the access key: take the identifier part, the left square bracket,
-             * wrap the key in quotes and finally take the right square bracket */
+            /* It's an array access expression, and since it's the only child node it isn't wrapped in curly braces.
+             * It has for sure an identifier part, a left square bracket, an index expression which may be using an
+             * unquoted string identifier, and a right square bracket */
             ASTNode[] arrayAccessExpressionChildren = children[0].getChildren(null);
-            String identifier = arrayAccessExpressionChildren[0].getText();
-            String arrayAccessIndex = arrayAccessExpressionChildren[2].getText();
-            if (!arrayAccessIndex.matches("\\A(0|[1-9][0-9]*)\\z")) {
-                /* index is not a decimal number, so it's a string literal in its special unquoted embedded syntax: add
-                 * missing quotes */
-                arrayAccessIndex = CHAR_SINGLE_QUOTE + arrayAccessIndex + CHAR_SINGLE_QUOTE;
+            String arrayIdentifier = arrayAccessExpressionChildren[0].getText();
+            ASTNode arrayAccessExpressionIndex = arrayAccessExpressionChildren[2];
+            ASTNode[] arrayAccessExpressionIndexChildren = arrayAccessExpressionIndex.getChildren(null);
+            String arrayRawAccessIndex = arrayAccessExpressionIndex.getText();
+            String arrayAccessIndex;
+            /* If array access expression is not surrounded with braces and the array index is an identifier,
+             * then it's using the unquoted key syntax. Surround the index with quotes.
+             * See http://php.net/manual/en/language.types.string.php#language.types.string.parsing */
+             /* Explicitly test for the identifier being an octal sequence, which is interpreted as an identifier by the
+              * PHP parser but as an integer offset by the PhpStorm parser.
+              * See https://youtrack.jetbrains.com/issue/WI-25187 */
+            // TODO remove `|| arrayRawAccessIndex.matches("\\A0+[1-9]+[0-9]*\\z")` when WI-25187 gets fixed
+            if (arrayAccessExpressionIndexChildren.length == 1 && (
+                arrayAccessExpressionIndexChildren[0].getElementType() == PhpTokenTypes.IDENTIFIER ||
+                    arrayRawAccessIndex.matches(REGEX_PHP_OCTAL_INTEGER)
+            )) {
+                arrayAccessIndex = CHAR_SINGLE_QUOTE + arrayRawAccessIndex + CHAR_SINGLE_QUOTE;
+            } else {
+                arrayAccessIndex = arrayRawAccessIndex;
             }
-            return identifier + CHAR_LEFT_SQUARE_BRACKET + arrayAccessIndex + CHAR_RIGHT_SQUARE_BRACKET;
+            return arrayIdentifier + CHAR_LEFT_SQUARE_BRACKET + arrayAccessIndex + CHAR_RIGHT_SQUARE_BRACKET;
         } else {
-            // if none of the previous condition is matched, then it's a simple variable embedding
+            /* if expression is embedded without braces and it's not array access expression, then it's a simple
+             * variable or an object property accessing */
             return astNode.getText();
         }
     }
