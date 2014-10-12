@@ -5,6 +5,7 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.tree.TokenSet;
 import com.jetbrains.php.lang.lexer.PhpTokenTypes;
 import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
@@ -54,6 +55,15 @@ class PhpStringUtil {
         return astNode != null && astNode.getElementType() == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE;
     }
 
+    static boolean isPhpNowdoc(PsiElement psiElement) {
+        ASTNode astNode = psiElement.getNode();
+        if (astNode == null) return false;
+        ASTNode parent = astNode.getTreeParent();
+        if (parent == null) return false;
+        ASTNode firstChild = parent.getFirstChildNode();
+        return firstChild.getElementType() == PhpTokenTypes.HEREDOC_START && firstChild.getText().indexOf(CHAR_SINGLE_QUOTE) >= 0;
+    }
+
     static PsiElement getPhpDoubleQuotedStringExpression(PsiElement psiElement) {
         if (psiElement instanceof PhpFile) return null;
         if (psiElement instanceof StringLiteralExpression) {
@@ -80,6 +90,11 @@ class PhpStringUtil {
         String phpStringLiteralText = psiElement.getText();
         String escapedContent = phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
         return unescapePhpSingleQuotedStringContent(escapedContent);
+    }
+
+    static String getPhpNowdocUnescapedContent(PsiElement psiElement) {
+        // nowdoc string literals' content is exact, no escaping is possible
+        return psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
     }
 
     /**
@@ -237,20 +252,24 @@ class PhpStringUtil {
             .replace("\\'", Character.toString(CHAR_SINGLE_QUOTE));
     }
 
-    static String escapePhpSingleQuotedStringContent(String unescapedContent) {
-        return unescapedContent.replaceAll("('|\\\\(?=')|\\\\\\z)", "\\\\$1");
+    static String escapePhpDoubleQuotedStringContent(String unescapedContent) {
+        String variablesEscaped = escapePhpHeredocContent(unescapedContent);
+        return variablesEscaped.replace(Character.toString(CHAR_DOUBLE_QUOTE), "\\\"");
     }
 
-    static String escapePhpDoubleQuotedStringContent(String unescapedContent) {
+    static String escapePhpHeredocContent(String unescapedContent) {
         // all allowed escape sequences in a double quoted string must be escaped with a backslash
         // see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double
         String escapeSequencesEscaped = unescapedContent.replaceAll("(\\\\(?:n|r|t|v|e|f|\\\\|\\$|'|[0-7]{1,3}|x[0-9A-Fa-f]{1,2}|\\z))", "\\\\$1");
         // a PHP variable identifier is defined by the regexp `[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*`
         // see http://php.net/manual/en/language.variables.basics.php
-        String variablesEscaped = escapeSequencesEscaped
+        return escapeSequencesEscaped
             .replaceAll("(\\$[a-zA-Z_\\x7f-\\xff])", "\\\\$1")
             .replaceAll("\\{\\$", "{\\\\\\$");
-        return variablesEscaped.replace(Character.toString(CHAR_DOUBLE_QUOTE), "\\\"");
+    }
+
+    static String escapePhpSingleQuotedStringContent(String unescapedContent) {
+        return unescapedContent.replaceAll("('|\\\\(?=')|\\\\\\z)", "\\\\$1");
     }
 
     static String cleanupStringEmbeddedExpression(ASTNode astNode) {
@@ -304,6 +323,12 @@ class PhpStringUtil {
     static StringLiteralExpression createPhpSingleQuotedStringPsiFromContent(Project project, String unescapedContent) {
         String escapedContent = escapePhpSingleQuotedStringContent(unescapedContent);
         String phpStringLiteral = CHAR_SINGLE_QUOTE + escapedContent + CHAR_SINGLE_QUOTE;
+        return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
+    }
+
+    static StringLiteralExpression createPhpHeredocPsiFromContent(Project project, String unescapedContent, String heredocTag) {
+        String escapedContent = escapePhpHeredocContent(unescapedContent);
+        String phpStringLiteral = "<<<" + heredocTag + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + heredocTag;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
