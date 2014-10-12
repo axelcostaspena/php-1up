@@ -14,30 +14,29 @@ import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PhpStringUtil {
-    public static final char   CHAR_VERTICAL_TAB         = (char) 11;
-    public static final char   CHAR_ESC                  = (char) 27;
-    public static final char   CHAR_NEWLINE              = '\n';
-    public static final char   CHAR_CARRIAGE_RETURN      = '\r';
-    public static final char   CHAR_TAB                  = '\t';
-    public static final char   CHAR_FORM_FEED            = '\f';
-    public static final char   CHAR_BACKSLASH            = '\\';
-    public static final char   CHAR_DOUBLE_QUOTE         = '"';
-    public static final char   CHAR_SINGLE_QUOTE         = '\'';
-    public static final char   CHAR_LEFT_SQUARE_BRACKET  = '[';
-    public static final char   CHAR_RIGHT_SQUARE_BRACKET = ']';
-    public static final char   CHAR_DOLLAR               = '$';
-    public static final char   CHAR_DOT                  = '.';
-    public static final char   CHAR_LCASE_E              = 'e';
-    public static final char   CHAR_LCASE_F              = 'f';
-    public static final char   CHAR_LCASE_N              = 'n';
-    public static final char   CHAR_LCASE_R              = 'r';
-    public static final char   CHAR_LCASE_T              = 't';
-    public static final char   CHAR_LCASE_V              = 'v';
-    public static final char   CHAR_LCASE_X              = 'x';
-    public static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
-    public static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
-    public static final String REGEX_PHP_OCTAL_INTEGER   = "\\A0[0-9]+\\z";
+class PhpStringUtil {
+    private static final char   CHAR_VERTICAL_TAB         = (char) 11;
+    private static final char   CHAR_ESC                  = (char) 27;
+    private static final char   CHAR_NEWLINE              = '\n';
+    private static final char   CHAR_CARRIAGE_RETURN      = '\r';
+    private static final char   CHAR_TAB                  = '\t';
+    private static final char   CHAR_FORM_FEED            = '\f';
+    private static final char   CHAR_BACKSLASH            = '\\';
+    private static final char   CHAR_DOUBLE_QUOTE         = '"';
+    private static final char   CHAR_SINGLE_QUOTE         = '\'';
+    private static final char   CHAR_LEFT_SQUARE_BRACKET  = '[';
+    private static final char   CHAR_RIGHT_SQUARE_BRACKET = ']';
+    private static final char   CHAR_DOLLAR               = '$';
+    private static final char   CHAR_LCASE_E              = 'e';
+    private static final char   CHAR_LCASE_F              = 'f';
+    private static final char   CHAR_LCASE_N              = 'n';
+    private static final char   CHAR_LCASE_R              = 'r';
+    private static final char   CHAR_LCASE_T              = 't';
+    private static final char   CHAR_LCASE_V              = 'v';
+    private static final char   CHAR_LCASE_X              = 'x';
+    private static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
+    private static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
+    private static final String REGEX_PHP_OCTAL_INTEGER   = "\\A0[0-9]+\\z";
 
     static boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
         return psiElement.getText().equals("\"\"");

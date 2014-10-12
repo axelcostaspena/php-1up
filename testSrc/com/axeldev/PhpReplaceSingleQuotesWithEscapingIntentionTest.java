@@ -13,7 +13,7 @@ import java.io.File;
 
 public class PhpReplaceSingleQuotesWithEscapingIntentionTest extends LightCodeInsightFixtureTestCase {
 
-    public static final String TEST_INTENTION_NAME = PhpReplaceSingleQuotesWithEscapingIntention.INTENTION_NAME;
+    private static final String TEST_INTENTION_NAME = PhpReplaceSingleQuotesWithEscapingIntention.INTENTION_NAME;
 
     private static class MyDescriptor extends DefaultLightProjectDescriptor {
         @Override

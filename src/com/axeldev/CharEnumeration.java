@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
  * @version 1
  * @see java.util.Enumeration
  */
-public class CharEnumeration {
+class CharEnumeration {
     private final char[] charArray;
     private int pointer;
 

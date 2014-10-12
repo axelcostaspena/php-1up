@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 
 public class PhpReplaceDoubleQuotesWithEscapingIntentionTest extends LightCodeInsightFixtureTestCase {
-    public static final String TEST_INTENTION_NAME_NO_VARS       = PhpReplaceDoubleQuotesWithEscapingIntention.INTENTION_NAME_NO_VARS;
-    public static final String TEST_INTENTION_NAME_EMBEDDED_VARS = PhpReplaceDoubleQuotesWithEscapingIntention.INTENTION_NAME_EMBEDDED_VARS;
+    private static final String TEST_INTENTION_NAME_NO_VARS       = PhpReplaceDoubleQuotesWithEscapingIntention.INTENTION_NAME_NO_VARS;
+    private static final String TEST_INTENTION_NAME_EMBEDDED_VARS = PhpReplaceDoubleQuotesWithEscapingIntention.INTENTION_NAME_EMBEDDED_VARS;
 
     private static class MyDescriptor extends DefaultLightProjectDescriptor {
         @Override

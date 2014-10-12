@@ -17,9 +17,11 @@ import java.util.List;
 
 public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseIntentionAction {
 
-    public static final String FAMILY_NAME                  = "Replace quotes";
+    private static final String FAMILY_NAME                  = "Replace quotes";
     public static final String INTENTION_NAME_NO_VARS       = "Replace quotes with escaping";
     public static final String INTENTION_NAME_EMBEDDED_VARS = "Replace quotes with escaping and variable concatenation";
+    private static final char   CHAR_SINGLE_QUOTE         = '\'';
+    private static final char   CHAR_DOT                  = '.';
 
     @NotNull
     @Override
@@ -54,7 +56,7 @@ public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseI
                     String doubleQuoteEscapedContent = stringLiteralFragment.getText();
                     String unescapedContent = PhpStringUtil.unescapePhpDoubleQuotedStringContent(doubleQuoteEscapedContent);
                     String singleQuoteEscapedContent = PhpStringUtil.escapePhpSingleQuotedStringContent(unescapedContent);
-                    return PhpStringUtil.CHAR_SINGLE_QUOTE + singleQuoteEscapedContent + PhpStringUtil.CHAR_SINGLE_QUOTE;
+                    return CHAR_SINGLE_QUOTE + singleQuoteEscapedContent + CHAR_SINGLE_QUOTE;
                 }
             }, new Function<ASTNode, String>() {
                 @Override
@@ -62,7 +64,7 @@ public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseI
                     return PhpStringUtil.cleanupStringEmbeddedExpression(embeddedExpression);
                 }
             });
-            String stringAndExpressionConcatenation = StringUtils.join(stringAndVariableList, PhpStringUtil.CHAR_DOT);
+            String stringAndExpressionConcatenation = StringUtils.join(stringAndVariableList, CHAR_DOT);
             if (stringAndExpressionConcatenation == null) return null;
             return PhpPsiElementFactory.createPhpPsiFromText(project, PhpExpression.class, stringAndExpressionConcatenation);
         } else {
