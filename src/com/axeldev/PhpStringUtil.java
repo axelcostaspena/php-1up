@@ -14,6 +14,8 @@ import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class PhpStringUtil {
     private static final char   CHAR_VERTICAL_TAB         = (char) 11;
@@ -37,7 +39,8 @@ class PhpStringUtil {
     private static final char   CHAR_LCASE_X              = 'x';
     private static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
     private static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
-    private static final String REGEX_PHP_OCTAL_INTEGER   = "\\A0[0-9]+\\z";
+    private static final String REGEXP_PHP_IDENTIFIER    = "[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*";
+    private static final String REGEXP_PHP_OCTAL_INTEGER = "\\A0[0-9]+\\z";
 
     static boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
         return psiElement.getText().equals("\"\"");
@@ -95,6 +98,13 @@ class PhpStringUtil {
     static String getPhpNowdocUnescapedContent(PsiElement psiElement) {
         // nowdoc string literals' content is exact, no escaping is possible
         return psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
+    }
+
+    static String getPhpNowdocIdentifier(PsiElement psiElement) {
+        String heredocStart = psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_START))[0].getText();
+        Pattern phpIdentifierPattern = Pattern.compile(REGEXP_PHP_IDENTIFIER);
+        Matcher phpIdentifierMatcher = phpIdentifierPattern.matcher(heredocStart);
+        return phpIdentifierMatcher.find() ? phpIdentifierMatcher.group(0) : null;
     }
 
     /**
@@ -300,7 +310,7 @@ class PhpStringUtil {
             // TODO remove `|| arrayRawAccessIndex.matches("\\A0+[1-9]+[0-9]*\\z")` when WI-25187 gets fixed
             if (arrayAccessExpressionIndexChildren.length == 1 && (
                 arrayAccessExpressionIndexChildren[0].getElementType() == PhpTokenTypes.IDENTIFIER ||
-                    arrayRawAccessIndex.matches(REGEX_PHP_OCTAL_INTEGER)
+                    arrayRawAccessIndex.matches(REGEXP_PHP_OCTAL_INTEGER)
             )) {
                 arrayAccessIndex = CHAR_SINGLE_QUOTE + arrayRawAccessIndex + CHAR_SINGLE_QUOTE;
             } else {
@@ -326,9 +336,9 @@ class PhpStringUtil {
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
-    static StringLiteralExpression createPhpHeredocPsiFromContent(Project project, String unescapedContent, String heredocTag) {
+    static StringLiteralExpression createPhpHeredocPsiFromContent(Project project, String unescapedContent, String heredocIdentifier) {
         String escapedContent = escapePhpHeredocContent(unescapedContent);
-        String phpStringLiteral = "<<<" + heredocTag + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + heredocTag;
+        String phpStringLiteral = "<<<" + heredocIdentifier + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + heredocIdentifier;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
