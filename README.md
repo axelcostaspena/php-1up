@@ -16,6 +16,12 @@ utils for PHP development.
 
 ## Changelog
 
+version 0.1.2
+
+* Fix [#7](https://github.com/axelcostaspena/php-1up/issues/7): "Replace quotes with ... variable concatenation" changes numeric array index to string
+* Fix [#8](https://github.com/axelcostaspena/php-1up/issues/8): "Replace quotes with escaping" excessively escapes backslash before newline and end of fragment
+* Fix [#9](https://github.com/axelcostaspena/php-1up/issues/9): "Replace quotes with ... variable concatenation" changes variable as array index to string
+
 version 0.1.1
 
 * Fix [#1](https://github.com/axelcostaspena/php-1up/issues/1): Unescaping misses escaped dollar sign

@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <id>com.axeldev.php1Up</id>
     <name>PHP 1Up!</name>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <vendor email="axl.coding@gmail.com" url="https://github.com/axelcostaspena">Áxel Costas Pena</vendor>
 
     <description><![CDATA[
@@ -23,6 +23,13 @@
 
     <change-notes><![CDATA[
         <p>Change history:</p>
+        <br/>
+        <p>v0.1.2</p>
+        <ul>
+            <li>Fix <a href="https://github.com/axelcostaspena/php-1up/issues/7">#7</a>: "Replace quotes with ... variable concatenation" changes numeric array index to string</li>
+            <li>Fix <a href="https://github.com/axelcostaspena/php-1up/issues/8">#8</a>: "Replace quotes with escaping" excessively escapes backslash before newline and end of fragment</li>
+            <li>Fix <a href="https://github.com/axelcostaspena/php-1up/issues/9">#9</a>: "Replace quotes with ... variable concatenation" changes variable as array index to string</li>
+        </ul>
         <br/>
         <p>v0.1.1</p>
         <ul>
