@@ -3,4 +3,3 @@
 $foo = <<<EOT
 foo bar
 EOT;
-
