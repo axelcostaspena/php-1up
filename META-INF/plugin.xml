@@ -66,6 +66,10 @@
             <category>PHP</category>
         </intentionAction>
         <intentionAction>
+            <className>com.axeldev.PhpHeredocToNowdocWithEscapingIntention</className>
+            <category>PHP</category>
+        </intentionAction>
+        <intentionAction>
             <className>com.axeldev.PhpNowdocToHeredocWithEscapingIntention</className>
             <category>PHP</category>
         </intentionAction>
