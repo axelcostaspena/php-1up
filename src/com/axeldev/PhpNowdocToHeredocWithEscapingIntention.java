@@ -36,9 +36,9 @@ public class PhpNowdocToHeredocWithEscapingIntention extends PsiElementBaseInten
         if (!PhpStringUtil.isPhpNowdoc(psiElement)) return;
         PsiElement parentPsi = psiElement.getParent();
         if (!(parentPsi instanceof StringLiteralExpression)) return;
-        StringLiteralExpression phpDoubleQuotedStringLiteralPsi = convertPhpNowdocToHeredoc(psiElement);
-        if (phpDoubleQuotedStringLiteralPsi == null) return;
-        parentPsi.replace(phpDoubleQuotedStringLiteralPsi);
+        StringLiteralExpression phpHeredocPsi = convertPhpNowdocToHeredoc(psiElement);
+        if (phpHeredocPsi == null) return;
+        parentPsi.replace(phpHeredocPsi);
     }
 
     private StringLiteralExpression convertPhpNowdocToHeredoc(PsiElement psiElement) {
