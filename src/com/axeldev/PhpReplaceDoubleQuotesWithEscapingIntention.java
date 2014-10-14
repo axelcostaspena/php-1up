@@ -68,7 +68,7 @@ public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseI
             if (stringAndExpressionConcatenation == null) return null;
             return PhpPsiElementFactory.createPhpPsiFromText(project, PhpExpression.class, stringAndExpressionConcatenation);
         } else {
-            String unescapedContent = PhpStringUtil.getPhpDoubleQuotedStringUnescapedContent(stringLiteralExpression);
+            String unescapedContent = PhpStringUtil.getPhpDoubleQuotedSimpleStringUnescapedContent(stringLiteralExpression);
             return PhpStringUtil.createPhpSingleQuotedStringPsiFromContent(psiElement.getProject(), unescapedContent);
         }
     }
