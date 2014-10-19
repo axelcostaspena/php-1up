@@ -373,7 +373,7 @@ class PhpStringUtil {
     static String escapePhpDoubleQuotedStringContent(String unescapedContent) {
         // all allowed escape sequences in a double quoted string must be escaped with a backslash
         // see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double
-        String escapeSequencesEscaped = unescapedContent.replaceAll("(\\\\(?:n|r|t|v|e|f|\\\\|\\$|'|[0-7]{1,3}|x[0-9A-Fa-f]{1,2}|\\z))", "\\\\$1");
+        String escapeSequencesEscaped = unescapedContent.replaceAll("(\\\\(?:n|r|t|v|e|f|\\\\|\\$|[0-7]{1,3}|x[0-9A-Fa-f]{1,2}|\\z))", "\\\\$1");
         // a PHP variable identifier is defined by the regexp `[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*`
         // see http://php.net/manual/en/language.variables.basics.php
         String variablesEscaped = escapeSequencesEscaped
