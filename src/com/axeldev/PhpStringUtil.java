@@ -69,7 +69,7 @@ class PhpStringUtil {
         return firstChild.getElementType() == PhpTokenTypes.HEREDOC_START && !firstChild.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
     }
 
-    static boolean isPhpHeredocWithEmbeddedExpression(PsiElement psiElement) {
+    static boolean isPhpComplexHeredoc(PsiElement psiElement) {
         if (!isPhpHeredoc(psiElement)) return false;
         ASTNode astNode = psiElement.getNode();
         ASTNode parent = astNode.getTreeParent();
@@ -103,9 +103,13 @@ class PhpStringUtil {
         return parentPsi != null ? getPhpDoubleQuotedStringExpression(parentPsi) : null;
     }
 
-    static String getPhpDoubleQuotedSimpleStringUnescapedContent(PsiElement psiElement) {
+    static String getPhpDoubleQuotedStringContent(PsiElement psiElement) {
         String phpStringLiteral = psiElement.getText();
-        String escapedContent = phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
+        return phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
+    }
+
+    static String getPhpDoubleQuotedSimpleStringContentUnescaped(PsiElement psiElement) {
+        String escapedContent = getPhpDoubleQuotedStringContent(psiElement);
         return unescapePhpDoubleQuotedStringContent(escapedContent);
     }
 
@@ -156,13 +160,17 @@ class PhpStringUtil {
         return map;
     }
 
-    static String getPhpSingleQuotedStringUnescapedContent(PsiElement psiElement) {
+    static String getPhpSingleQuotedStringContent(PsiElement psiElement) {
         String phpStringLiteralText = psiElement.getText();
-        String escapedContent = phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
+        return phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
+    }
+
+    static String getPhpSingleQuotedStringContentUnescaped(PsiElement psiElement) {
+        String escapedContent = getPhpSingleQuotedStringContent(psiElement);
         return unescapePhpSingleQuotedStringContent(escapedContent);
     }
 
-    static String getPhpHeredocUnescapedContent(PsiElement psiElement) {
+    static String getPhpSimpleHeredocContent(PsiElement psiElement) {
         PsiElement parentPsi = psiElement.getParent();
         List<String> stringContentFragments = mapPhpHeredocContent(parentPsi, new Function<ASTNode, String>() {
             @Override
@@ -170,7 +178,12 @@ class PhpStringUtil {
                 return astNode.getText();
             }
         }, null);
-        return unescapePhpHeredocContent(StringUtils.join(stringContentFragments, null));
+        return StringUtils.join(stringContentFragments, null);
+    }
+
+    static String getPhpSimpleHeredocContentUnescaped(PsiElement psiElement) {
+        String escapedContent = getPhpSimpleHeredocContent(psiElement);
+        return unescapePhpHeredocContent(escapedContent);
     }
 
     /**
@@ -221,8 +234,12 @@ class PhpStringUtil {
         return map;
     }
 
-    static String getPhpNowdocUnescapedContent(PsiElement psiElement) {
-        String escapedContent = psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
+    static String getPhpNowdocContent(PsiElement psiElement) {
+        return psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
+    }
+
+    static String getPhpNowdocContentUnescaped(PsiElement psiElement) {
+        String escapedContent = getPhpNowdocContent(psiElement);
         return unescapePhpNowdocContent(escapedContent);
     }
 

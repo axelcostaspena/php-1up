@@ -29,7 +29,7 @@ public class PhpHeredocToNowdocWithEscapingIntention extends PsiElementBaseInten
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) {
-        return PhpWorkaroundUtil.isIntentionAvailable(psiElement) && PhpStringUtil.isPhpHeredoc(psiElement) && !PhpStringUtil.isPhpHeredocWithEmbeddedExpression(psiElement);
+        return PhpWorkaroundUtil.isIntentionAvailable(psiElement) && PhpStringUtil.isPhpHeredoc(psiElement) && !PhpStringUtil.isPhpComplexHeredoc(psiElement);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class PhpHeredocToNowdocWithEscapingIntention extends PsiElementBaseInten
     }
 
     private StringLiteralExpression convertPhpHeredocToNowdoc(PsiElement psiElement) throws PhpStringUtilOperationException {
-        String stringContent = PhpStringUtil.getPhpHeredocUnescapedContent(psiElement);
+        String stringContent = PhpStringUtil.getPhpSimpleHeredocContentUnescaped(psiElement);
         String heredocIdentifier = PhpStringUtil.getPhpHeredocIdentifier(psiElement);
         return PhpStringUtil.createPhpNowdocPsiFromContent(psiElement.getProject(), stringContent, heredocIdentifier);
     }

@@ -42,7 +42,7 @@ public class PhpNowdocToHeredocWithEscapingIntention extends PsiElementBaseInten
     }
 
     private StringLiteralExpression convertPhpNowdocToHeredoc(PsiElement psiElement) {
-        String stringContent = PhpStringUtil.getPhpNowdocUnescapedContent(psiElement);
+        String stringContent = PhpStringUtil.getPhpNowdocContentUnescaped(psiElement);
         String heredocIdentifier = PhpStringUtil.getPhpNowdocIdentifier(psiElement);
         return PhpStringUtil.createPhpHeredocPsiFromContent(psiElement.getProject(), stringContent, heredocIdentifier);
     }

@@ -42,7 +42,7 @@ public class PhpReplaceSingleQuotesWithEscapingIntention extends PsiElementBaseI
     }
 
     private StringLiteralExpression convertPhpSingleQuotedStringToDoubleQuotedString(PsiElement psiElement) {
-        String stringContent = PhpStringUtil.getPhpSingleQuotedStringUnescapedContent(psiElement);
+        String stringContent = PhpStringUtil.getPhpSingleQuotedStringContentUnescaped(psiElement);
         return PhpStringUtil.createPhpDoubleQuotedStringPsiFromContent(psiElement.getProject(), stringContent);
     }
 

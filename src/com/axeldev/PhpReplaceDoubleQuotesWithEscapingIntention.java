@@ -53,10 +53,10 @@ public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseI
             List<String> stringAndVariableList = PhpStringUtil.mapPhpDoubleQuotedComplexStringContent(stringLiteralExpression, new Function<ASTNode, String>() {
                 @Override
                 public String apply(ASTNode stringLiteralFragment) {
-                    String doubleQuoteEscapedContent = stringLiteralFragment.getText();
-                    String unescapedContent = PhpStringUtil.unescapePhpDoubleQuotedStringContent(doubleQuoteEscapedContent);
-                    String singleQuoteEscapedContent = PhpStringUtil.escapePhpSingleQuotedStringContent(unescapedContent);
-                    return CHAR_SINGLE_QUOTE + singleQuoteEscapedContent + CHAR_SINGLE_QUOTE;
+                    String doubleQuoteContentEscaped = stringLiteralFragment.getText();
+                    String unescapedContent = PhpStringUtil.unescapePhpDoubleQuotedStringContent(doubleQuoteContentEscaped);
+                    String singleQuoteContentEscaped = PhpStringUtil.escapePhpSingleQuotedStringContent(unescapedContent);
+                    return CHAR_SINGLE_QUOTE + singleQuoteContentEscaped + CHAR_SINGLE_QUOTE;
                 }
             }, new Function<ASTNode, String>() {
                 @Override
@@ -68,7 +68,7 @@ public class PhpReplaceDoubleQuotesWithEscapingIntention extends PsiElementBaseI
             if (stringAndExpressionConcatenation == null) return null;
             return PhpPsiElementFactory.createPhpPsiFromText(project, PhpExpression.class, stringAndExpressionConcatenation);
         } else {
-            String unescapedContent = PhpStringUtil.getPhpDoubleQuotedSimpleStringUnescapedContent(stringLiteralExpression);
+            String unescapedContent = PhpStringUtil.getPhpDoubleQuotedSimpleStringContentUnescaped(stringLiteralExpression);
             return PhpStringUtil.createPhpSingleQuotedStringPsiFromContent(psiElement.getProject(), unescapedContent);
         }
     }
