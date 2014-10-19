@@ -19,29 +19,30 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class PhpStringUtil {
-    private static final char   CHAR_VERTICAL_TAB         = (char) 11;
-    private static final char   CHAR_ESC                  = (char) 27;
-    private static final char   CHAR_NEWLINE              = '\n';
-    private static final char   CHAR_CARRIAGE_RETURN      = '\r';
-    private static final char   CHAR_TAB                  = '\t';
-    private static final char   CHAR_FORM_FEED            = '\f';
-    private static final char   CHAR_BACKSLASH            = '\\';
-    private static final char   CHAR_DOUBLE_QUOTE         = '"';
-    private static final char   CHAR_SINGLE_QUOTE         = '\'';
-    private static final char   CHAR_LEFT_SQUARE_BRACKET  = '[';
-    private static final char   CHAR_RIGHT_SQUARE_BRACKET = ']';
-    private static final char   CHAR_DOLLAR               = '$';
-    private static final char   CHAR_LCASE_E              = 'e';
-    private static final char   CHAR_LCASE_F              = 'f';
-    private static final char   CHAR_LCASE_N              = 'n';
-    private static final char   CHAR_LCASE_R              = 'r';
-    private static final char   CHAR_LCASE_T              = 't';
-    private static final char   CHAR_LCASE_V              = 'v';
-    private static final char   CHAR_LCASE_X              = 'x';
-    private static final String REGEXP_CHAR_IS_OCTAL      = "[0-7]";
-    private static final String REGEXP_CHAR_IS_HEX        = "[0-9A-Fa-f]";
-    private static final String REGEXP_PHP_IDENTIFIER    = "[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*";
-    private static final String REGEXP_PHP_OCTAL_INTEGER = "\\A0[0-9]+\\z";
+    private static final String MESSAGE_HEREDOC_CONTAINS_DELIMITER_ITSELF = "Cannot perform refactoring.\nUnescaped heredoc content contains the heredoc delimiter itself.";
+    private static final char   CHAR_VERTICAL_TAB                         = (char) 11;
+    private static final char   CHAR_ESC                                  = (char) 27;
+    private static final char   CHAR_NEWLINE                              = '\n';
+    private static final char   CHAR_CARRIAGE_RETURN                      = '\r';
+    private static final char   CHAR_TAB                                  = '\t';
+    private static final char   CHAR_FORM_FEED                            = '\f';
+    private static final char   CHAR_BACKSLASH                            = '\\';
+    private static final char   CHAR_DOUBLE_QUOTE                         = '"';
+    private static final char   CHAR_SINGLE_QUOTE                         = '\'';
+    private static final char   CHAR_LEFT_SQUARE_BRACKET                  = '[';
+    private static final char   CHAR_RIGHT_SQUARE_BRACKET                 = ']';
+    private static final char   CHAR_DOLLAR                               = '$';
+    private static final char   CHAR_LCASE_E                              = 'e';
+    private static final char   CHAR_LCASE_F                              = 'f';
+    private static final char   CHAR_LCASE_N                              = 'n';
+    private static final char   CHAR_LCASE_R                              = 'r';
+    private static final char   CHAR_LCASE_T                              = 't';
+    private static final char   CHAR_LCASE_V                              = 'v';
+    private static final char   CHAR_LCASE_X                              = 'x';
+    private static final String REGEXP_CHAR_IS_OCTAL                      = "[0-7]";
+    private static final String REGEXP_CHAR_IS_HEX                        = "[0-9A-Fa-f]";
+    private static final String REGEXP_PHP_IDENTIFIER                     = "[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*";
+    private static final String REGEXP_PHP_OCTAL_INTEGER                  = "\\A0[0-9]+\\z";
 
     static boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
         return psiElement.getText().equals("\"\"");
@@ -462,8 +463,13 @@ class PhpStringUtil {
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
-    static StringLiteralExpression createPhpNowdocPsiFromContent(Project project, String unescapedContent, String nowdocIdentifier) {
+    static StringLiteralExpression createPhpNowdocPsiFromContent(Project project, String unescapedContent, String nowdocIdentifier) throws PhpStringUtilOperationException {
         String escapedContent = escapePhpNowdocContent(unescapedContent);
+        /* if the nowdoc identifier itself matches an exact line inside the escaped content, nowdoc will be cropped and
+         * following contents will be lost */
+        if (escapedContent.matches("(?ms).*?^" + nowdocIdentifier + "$.*")) {
+            throw new PhpStringUtilOperationException(MESSAGE_HEREDOC_CONTAINS_DELIMITER_ITSELF);
+        }
         String phpStringLiteral = "<<<" + CHAR_SINGLE_QUOTE + nowdocIdentifier + CHAR_SINGLE_QUOTE + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + nowdocIdentifier;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }

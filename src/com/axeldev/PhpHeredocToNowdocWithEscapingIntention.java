@@ -1,5 +1,6 @@
 package com.axeldev;
 
+import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -33,16 +34,23 @@ public class PhpHeredocToNowdocWithEscapingIntention extends PsiElementBaseInten
 
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) throws IncorrectOperationException {
-        if (!PhpStringUtil.isPhpHeredoc(psiElement)) return;
-        PsiElement parentPsi = psiElement.getParent();
-        if (!(parentPsi instanceof StringLiteralExpression)) return;
-        StringLiteralExpression phpDoubleQuotedStringLiteralPsi = convertPhpHeredocToNowdoc(psiElement);
-        if (phpDoubleQuotedStringLiteralPsi == null) return;
-        parentPsi.replace(phpDoubleQuotedStringLiteralPsi);
+        try {
+            if (!PhpStringUtil.isPhpHeredoc(psiElement)) return;
+            PsiElement parentPsi = psiElement.getParent();
+            if (!(parentPsi instanceof StringLiteralExpression)) return;
+            StringLiteralExpression phpDoubleQuotedStringLiteralPsi = convertPhpHeredocToNowdoc(psiElement);
+            if (phpDoubleQuotedStringLiteralPsi == null) return;
+            parentPsi.replace(phpDoubleQuotedStringLiteralPsi);
+        } catch (PhpStringUtilOperationException ex) {
+            try {
+                HintManager.getInstance().showErrorHint(editor, ex.getMessage());
+            }
+            // silent npe at com.intellij.codeInsight.hint.HintManagerImpl when launching intention from unit test
+            catch (Exception ignored) {}
+        }
     }
 
-    private StringLiteralExpression convertPhpHeredocToNowdoc(PsiElement psiElement) {
-        // TODO escape also identifier if appears alone in content line
+    private StringLiteralExpression convertPhpHeredocToNowdoc(PsiElement psiElement) throws PhpStringUtilOperationException {
         String stringContent = PhpStringUtil.getPhpHeredocUnescapedContent(psiElement);
         String heredocIdentifier = PhpStringUtil.getPhpHeredocIdentifier(psiElement);
         return PhpStringUtil.createPhpNowdocPsiFromContent(psiElement.getProject(), stringContent, heredocIdentifier);

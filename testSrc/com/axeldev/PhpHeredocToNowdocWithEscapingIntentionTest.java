@@ -86,4 +86,12 @@ public class PhpHeredocToNowdocWithEscapingIntentionTest extends LightCodeInsigh
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testHeredocWhichContainsIdentifierItselfIsNotConverted() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testHeredocWhichContainsIdentifierItselfSuspiciousScenarios() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
