@@ -72,4 +72,8 @@ public class PhpNowdocToHeredocWithEscapingIntentionTest extends LightCodeInsigh
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testEscapingSeveralBackslashesMissesLast() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
