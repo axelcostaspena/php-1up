@@ -67,4 +67,8 @@ public class PhpReplaceSingleQuotesWithEscapingIntentionTest extends LightCodeIn
         phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testBackslashBeforeNewlineAndEndOfSingleQuotedString() {
+        phpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
