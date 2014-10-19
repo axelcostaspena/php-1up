@@ -1,5 +1,5 @@
 <?php
 
 $foo = <<<EOT
-\\
+\
 EOT;
