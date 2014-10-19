@@ -46,7 +46,7 @@ public class PhpHeredocToNowdocWithEscapingIntention extends PsiElementBaseInten
                 HintManager.getInstance().showErrorHint(editor, ex.getMessage());
             }
             // silent npe at com.intellij.codeInsight.hint.HintManagerImpl when launching intention from unit test
-            catch (Exception ignored) {}
+            catch (NullPointerException ignored) {}
         }
     }
 
