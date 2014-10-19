@@ -1,3 +1,3 @@
 <?php
 
-$foo = 'f<caret>oo bar';
+$foo = 'foo bar';
