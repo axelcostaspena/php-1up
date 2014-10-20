@@ -464,18 +464,30 @@ class PhpStringUtil {
 
     static StringLiteralExpression createPhpDoubleQuotedStringPsiFromContent(Project project, String unescapedContent) {
         String escapedContent = escapePhpDoubleQuotedStringContent(unescapedContent);
+        return createPhpDoubleQuotedStringPsiFromEscapedContent(project, escapedContent);
+    }
+
+    static StringLiteralExpression createPhpDoubleQuotedStringPsiFromEscapedContent(Project project, String escapedContent) {
         String phpStringLiteral = CHAR_DOUBLE_QUOTE + escapedContent + CHAR_DOUBLE_QUOTE;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
     static StringLiteralExpression createPhpSingleQuotedStringPsiFromContent(Project project, String unescapedContent) {
         String escapedContent = escapePhpSingleQuotedStringContent(unescapedContent);
+        return createPhpSingleQuotedStringPsiFromEscapedContent(project, escapedContent);
+    }
+
+    static StringLiteralExpression createPhpSingleQuotedStringPsiFromEscapedContent(Project project, String escapedContent) {
         String phpStringLiteral = CHAR_SINGLE_QUOTE + escapedContent + CHAR_SINGLE_QUOTE;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
     static StringLiteralExpression createPhpHeredocPsiFromContent(Project project, String unescapedContent, String heredocIdentifier) {
         String escapedContent = escapePhpHeredocContent(unescapedContent);
+        return createPhpHeredocPsiFromEscapedContent(project, heredocIdentifier, escapedContent);
+    }
+
+    static StringLiteralExpression createPhpHeredocPsiFromEscapedContent(Project project, String escapedContent, String heredocIdentifier) {
         String phpStringLiteral = "<<<" + heredocIdentifier + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + heredocIdentifier;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
@@ -487,6 +499,10 @@ class PhpStringUtil {
         if (escapedContent.matches("(?ms).*?^" + nowdocIdentifier + "$.*")) {
             throw new PhpStringUtilOperationException(MESSAGE_HEREDOC_CONTAINS_DELIMITER_ITSELF);
         }
+        return createPhpNowdocPsiFromEscapedContent(project, nowdocIdentifier, escapedContent);
+    }
+
+    static StringLiteralExpression createPhpNowdocPsiFromEscapedContent(Project project, String escapedContent, String nowdocIdentifier) {
         String phpStringLiteral = "<<<" + CHAR_SINGLE_QUOTE + nowdocIdentifier + CHAR_SINGLE_QUOTE + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + nowdocIdentifier;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
