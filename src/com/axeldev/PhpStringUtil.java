@@ -484,7 +484,7 @@ class PhpStringUtil {
 
     static StringLiteralExpression createPhpHeredocPsiFromContent(Project project, String unescapedContent, String heredocIdentifier) {
         String escapedContent = escapePhpHeredocContent(unescapedContent);
-        return createPhpHeredocPsiFromEscapedContent(project, heredocIdentifier, escapedContent);
+        return createPhpHeredocPsiFromEscapedContent(project, escapedContent, heredocIdentifier);
     }
 
     static StringLiteralExpression createPhpHeredocPsiFromEscapedContent(Project project, String escapedContent, String heredocIdentifier) {
@@ -499,7 +499,7 @@ class PhpStringUtil {
         if (escapedContent.matches("(?ms).*?^" + nowdocIdentifier + "$.*")) {
             throw new PhpStringUtilOperationException(MESSAGE_HEREDOC_CONTAINS_DELIMITER_ITSELF);
         }
-        return createPhpNowdocPsiFromEscapedContent(project, nowdocIdentifier, escapedContent);
+        return createPhpNowdocPsiFromEscapedContent(project, escapedContent, nowdocIdentifier);
     }
 
     static StringLiteralExpression createPhpNowdocPsiFromEscapedContent(Project project, String escapedContent, String nowdocIdentifier) {
