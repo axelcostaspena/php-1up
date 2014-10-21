@@ -32,4 +32,8 @@ public class PhpNowdocToHeredocIntentionTest extends Php1UpLightCodeInsightFixtu
         launchPhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testVariablesAndExpressions() {
+        launchPhpIntentionTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
 }
