@@ -37,7 +37,7 @@ public class Php1UpLightCodeInsightFixtureTestCase extends LightCodeInsightFixtu
         return new File(testPath, "../../..");
     }
 
-    protected void phpIntentionTest(String testName, String intentionName) {
+    protected void launchPhpIntentionTest(String testName, String intentionName) {
         myFixture.configureByFile("before" + testName + ".php");
         IntentionAction intention = myFixture.getAvailableIntention(intentionName);
         if (intention == null) {
@@ -46,4 +46,5 @@ public class Php1UpLightCodeInsightFixtureTestCase extends LightCodeInsightFixtu
         myFixture.launchAction(intention);
         myFixture.checkResultByFile("after" + testName + ".php");
     }
+
 }
