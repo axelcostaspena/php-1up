@@ -1,6 +1,5 @@
 <?php
 
 $foo = <<<EOT
-f<caret>oo\
-
+f<caret>oo{$bar} baz
 EOT;

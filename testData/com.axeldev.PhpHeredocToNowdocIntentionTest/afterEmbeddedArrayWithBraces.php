@@ -1,6 +1,5 @@
 <?php
 
 $foo = <<<'EOT'
-foo\
-
+foo{$bar["baz"]} qux
 EOT;
