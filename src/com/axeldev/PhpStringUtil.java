@@ -14,93 +14,155 @@ import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class PhpStringUtil {
-    private static final String MESSAGE_HEREDOC_CONTAINS_DELIMITER_ITSELF = "Cannot perform refactoring.\nUnescaped heredoc content contains the heredoc delimiter itself.";
-    private static final char   CHAR_VERTICAL_TAB                         = (char) 11;
-    private static final char   CHAR_ESC                                  = (char) 27;
-    private static final char   CHAR_NEWLINE                              = '\n';
-    private static final char   CHAR_CARRIAGE_RETURN                      = '\r';
-    private static final char   CHAR_TAB                                  = '\t';
-    private static final char   CHAR_FORM_FEED                            = '\f';
-    private static final char   CHAR_BACKSLASH                            = '\\';
-    private static final char   CHAR_DOUBLE_QUOTE                         = '"';
-    private static final char   CHAR_SINGLE_QUOTE                         = '\'';
-    private static final char   CHAR_LEFT_SQUARE_BRACKET                  = '[';
-    private static final char   CHAR_RIGHT_SQUARE_BRACKET                 = ']';
-    private static final char   CHAR_DOLLAR                               = '$';
-    private static final char   CHAR_LCASE_E                              = 'e';
-    private static final char   CHAR_LCASE_F                              = 'f';
-    private static final char   CHAR_LCASE_N                              = 'n';
-    private static final char   CHAR_LCASE_R                              = 'r';
-    private static final char   CHAR_LCASE_T                              = 't';
-    private static final char   CHAR_LCASE_V                              = 'v';
-    private static final char   CHAR_LCASE_X                              = 'x';
-    private static final String REGEXP_CHAR_IS_OCTAL                      = "[0-7]";
-    private static final String REGEXP_CHAR_IS_HEX                        = "[0-9A-Fa-f]";
-    private static final String REGEXP_PHP_IDENTIFIER                     = "[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*";
-    private static final String REGEXP_PHP_OCTAL_INTEGER                  = "\\A0[0-9]+\\z";
 
-    static boolean isPhpDoubleQuotedEmptyString(PsiElement psiElement) {
-        return psiElement.getText().equals("\"\"");
+    private static final String MESSAGE_NOWDOC_CONTAINS_DELIMITER_ITSELF = "Error on creating NOWDOC string literal.\nNOWDOC content contains the NOWDOC delimiter itself.";
+
+    private static final char CHAR_VERTICAL_TAB         = (char) 11;
+    private static final char CHAR_ESC                  = (char) 27;
+    private static final char CHAR_NEWLINE              = '\n';
+    private static final char CHAR_CARRIAGE_RETURN      = '\r';
+    private static final char CHAR_TAB                  = '\t';
+    private static final char CHAR_FORM_FEED            = '\f';
+    private static final char CHAR_BACKSLASH            = '\\';
+    private static final char CHAR_DOUBLE_QUOTE         = '"';
+    private static final char CHAR_SINGLE_QUOTE         = '\'';
+    private static final char CHAR_LEFT_SQUARE_BRACKET  = '[';
+    private static final char CHAR_RIGHT_SQUARE_BRACKET = ']';
+    private static final char CHAR_DOLLAR               = '$';
+    private static final char CHAR_LCASE_E              = 'e';
+    private static final char CHAR_LCASE_F              = 'f';
+    private static final char CHAR_LCASE_N              = 'n';
+    private static final char CHAR_LCASE_R              = 'r';
+    private static final char CHAR_LCASE_T              = 't';
+    private static final char CHAR_LCASE_V              = 'v';
+    private static final char CHAR_LCASE_X              = 'x';
+
+    private static final String REGEXP_CHAR_IS_OCTAL     = "[0-7]";
+    private static final String REGEXP_CHAR_IS_HEX       = "[0-9A-Fa-f]";
+    private static final String REGEXP_PHP_IDENTIFIER    = "[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*";
+    private static final String REGEXP_PHP_OCTAL_INTEGER = "\\A0[0-9]+\\z";
+
+    public static enum StringType {
+        DoubleQuotedString, SingleQuotedString, Heredoc, Nowdoc
     }
 
-    static boolean isPhpDoubleQuotedComplexString(PsiElement psiElement) {
-        ASTNode astNode = psiElement.getNode();
-        if (astNode == null) return false;
-        ASTNode[] children = astNode.getChildren(null);
-        return children != null && children.length > 1;
+    private static final Function<String, String> stringContract = new Function<String, String>() {
+        @Override
+        public String apply(String string) {
+            return string;
+        }
+    };
+
+    private static final Function<ASTNode, String> astNodeGetText = new Function<ASTNode, String>() {
+        @Override
+        public String apply(ASTNode astNode) {
+            return astNode.getText();
+        }
+    };
+
+    static StringLiteralExpression findPhpStringLiteralExpression(PsiElement psiElement, StringType stringType) {
+        return findPhpStringLiteralExpression(psiElement, EnumSet.of(stringType));
     }
 
-    static boolean isPhpSingleQuotedString(PsiElement psiElement) {
-        ASTNode astNode = psiElement.getNode();
-        return astNode != null && astNode.getElementType() == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE;
-    }
-
-    static boolean isPhpHeredoc(PsiElement psiElement) {
-        ASTNode astNode = psiElement.getNode();
-        if (astNode == null) return false;
-        ASTNode parent = astNode.getTreeParent();
-        if (parent == null) return false;
-        ASTNode firstChild = parent.getFirstChildNode();
-        return firstChild.getElementType() == PhpTokenTypes.HEREDOC_START && !firstChild.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
-    }
-
-    static boolean isPhpComplexHeredoc(PsiElement psiElement) {
-        if (!isPhpHeredoc(psiElement)) return false;
-        ASTNode astNode = psiElement.getNode();
-        ASTNode parent = astNode.getTreeParent();
-        TokenSet tokenSetNonEmbeddedExpressionContents = TokenSet.create(PhpTokenTypes.HEREDOC_START, PhpTokenTypes.HEREDOC_END, PhpTokenTypes.HEREDOC_CONTENTS, PhpTokenTypes.ESCAPE_SEQUENCE);
-        // heredoc has expressions embedded if there are more children than only delimiters and text content children
-        return parent.getChildren(null).length > parent.getChildren(tokenSetNonEmbeddedExpressionContents).length;
-    }
-
-    static boolean isPhpNowdoc(PsiElement psiElement) {
-        ASTNode astNode = psiElement.getNode();
-        if (astNode == null) return false;
-        ASTNode parent = astNode.getTreeParent();
-        if (parent == null) return false;
-        ASTNode firstChild = parent.getFirstChildNode();
-        return firstChild.getElementType() == PhpTokenTypes.HEREDOC_START && firstChild.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
-    }
-
-    static PsiElement getPhpDoubleQuotedStringExpression(PsiElement psiElement) {
+    static StringLiteralExpression findPhpStringLiteralExpression(PsiElement psiElement, EnumSet<StringType> stringTypeSet) {
         if (psiElement instanceof PhpFile) return null;
         if (psiElement instanceof StringLiteralExpression) {
-            PsiElement firstChild = psiElement.getFirstChild();
-            if (firstChild != null) {
-                ASTNode childAstNode = firstChild.getNode();
-                IElementType childElementType = childAstNode.getElementType();
-                if (childElementType == PhpTokenTypes.STRING_LITERAL || childElementType == PhpTokenTypes.chLDOUBLE_QUOTE) {
-                    return psiElement;
+            StringLiteralExpression stringLiteralExpression = (StringLiteralExpression) psiElement;
+            ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+            IElementType firstChildNodeType = firstChildNode.getElementType();
+            if (firstChildNodeType == PhpTokenTypes.STRING_LITERAL || firstChildNodeType == PhpTokenTypes.chLDOUBLE_QUOTE) {
+                if (stringTypeSet.contains(StringType.DoubleQuotedString)) {
+                    return stringLiteralExpression;
+                }
+            } else if (firstChildNodeType == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE) {
+                if (stringTypeSet.contains(StringType.SingleQuotedString)) {
+                    return stringLiteralExpression;
+                }
+            } else if (firstChildNodeType == PhpTokenTypes.HEREDOC_START) {
+                boolean isNowdoc = firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE)),
+                    isHeredoc = !isNowdoc;
+                if ((stringTypeSet.contains(StringType.Heredoc) && isHeredoc) ||
+                    (stringTypeSet.contains(StringType.Nowdoc) && isNowdoc)) {
+                    return stringLiteralExpression;
                 }
             }
         }
         PsiElement parentPsi = psiElement.getParent();
-        return parentPsi != null ? getPhpDoubleQuotedStringExpression(parentPsi) : null;
+        return parentPsi != null ? findPhpStringLiteralExpression(parentPsi, stringTypeSet) : null;
+    }
+
+    static boolean isPhpDoubleQuotedString(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.STRING_LITERAL || firstChildNodeType == PhpTokenTypes.chLDOUBLE_QUOTE;
+    }
+
+    static boolean isPhpDoubleQuotedEmptyString(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.STRING_LITERAL && stringLiteralExpression.getText().equals("\"\"");
+    }
+
+    static boolean isPhpDoubleQuotedComplexString(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.chLDOUBLE_QUOTE;
+    }
+
+    static boolean isPhpSingleQuotedString(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE;
+    }
+
+    static boolean isPhpSingleQuotedEmptyString(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE && stringLiteralExpression.getText().equals("''");
+    }
+
+    static boolean isPhpHeredoc(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.HEREDOC_START && !firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
+    }
+
+    static boolean isPhpEmptyHeredoc(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        if (firstChildNodeType != PhpTokenTypes.HEREDOC_START || firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE))) return false;
+        ASTNode astNode = stringLiteralExpression.getNode();
+        TokenSet tokenSetNonHeredocDelimiters = TokenSet.create(PhpTokenTypes.HEREDOC_START, PhpTokenTypes.HEREDOC_END);
+        return astNode.getChildren(null).length == astNode.getChildren(tokenSetNonHeredocDelimiters).length;
+    }
+
+    static boolean isPhpComplexHeredoc(StringLiteralExpression stringLiteralExpression) {
+        if (!isPhpHeredoc(stringLiteralExpression)) return false;
+        ASTNode astNode = stringLiteralExpression.getNode();
+        TokenSet tokenSetNonEmbeddedExpressionContents = TokenSet.create(PhpTokenTypes.HEREDOC_START, PhpTokenTypes.HEREDOC_END, PhpTokenTypes.HEREDOC_CONTENTS, PhpTokenTypes.ESCAPE_SEQUENCE);
+        // heredoc has expressions embedded if there are more children than only delimiters and text content children
+        return astNode.getChildren(null).length > astNode.getChildren(tokenSetNonEmbeddedExpressionContents).length;
+    }
+
+    static boolean isPhpNowdoc(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        return firstChildNodeType == PhpTokenTypes.HEREDOC_START && firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
+    }
+
+    static boolean isPhpEmptyNowdoc(StringLiteralExpression stringLiteralExpression) {
+        ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
+        IElementType firstChildNodeType = firstChildNode.getElementType();
+        if (firstChildNodeType != PhpTokenTypes.HEREDOC_START || !firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE))) return false;
+        ASTNode astNode = stringLiteralExpression.getNode();
+        TokenSet tokenSetNonHeredocDelimiters = TokenSet.create(PhpTokenTypes.HEREDOC_START, PhpTokenTypes.HEREDOC_END);
+        return astNode.getChildren(null).length == astNode.getChildren(tokenSetNonHeredocDelimiters).length;
     }
 
     static String getPhpDoubleQuotedStringContent(PsiElement psiElement) {
@@ -108,7 +170,7 @@ class PhpStringUtil {
         return phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
     }
 
-    static String getPhpDoubleQuotedSimpleStringContentUnescaped(PsiElement psiElement) {
+    static String getPhpDoubleQuotedSimpleStringUnescapedContent(PsiElement psiElement) {
         String escapedContent = getPhpDoubleQuotedStringContent(psiElement);
         return unescapePhpDoubleQuotedStringContent(escapedContent);
     }
@@ -118,9 +180,9 @@ class PhpStringUtil {
      * specify a callback function for processing string literal fragments, and other for embedded variables and
      * expressions. Delimiter double quotes are omitted since their presence is constant.
      *
-     * @param psiElement               The PHP double quoted string literal whose nodes are wanted to map
-     * @param stringFragmentMapper     A Function implementation which gets a String from the ASTNode of any string
-     *                                 literal fragment on the PHP string. Any node which lead to a null return value
+     * @param psiElement               The PHP double quoted string literal whose nodes are intended to map
+     * @param stringFragmentMapper     A Function implementation which processes the content of the string literal
+     *                                 fragment from the PHP string. Any fragment which lead to a null return value
      *                                 will be omitted from the result.
      * @param embeddedExpressionMapper A Function implementation which gets a String from the ASTNode of any variable or
      *                                 expression embedded on the PHP string. Any node which lead to a null return value
@@ -128,11 +190,11 @@ class PhpStringUtil {
      * @return A List of String objects containing the results of sequentially applying the PHP string pieces to the
      * provided Function implementations as determined by the node type.
      */
-    public static List<String> mapPhpDoubleQuotedComplexStringContent(PsiElement psiElement, Function<ASTNode, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
+    public static List<String> mapPhpDoubleQuotedComplexStringContent(PsiElement psiElement, Function<String, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
         ASTNode astNode = psiElement.getNode();
         if (astNode == null) return null;
         ASTNode[] children = astNode.getChildren(null);
-        // complex strings always have more than one child node
+        // if string has single node then it isn't complex
         if (children.length <= 1) return null;
         List<String> map = new ArrayList<String>();
         for (ASTNode childNode : children) {
@@ -142,7 +204,7 @@ class PhpStringUtil {
             if (pieceType == PhpTokenTypes.STRING_LITERAL) {
                 // the ASTNode is a piece of textual content of the string
                 if (stringFragmentMapper != null) {
-                    String stringFragmentResult = stringFragmentMapper.apply(childNode);
+                    String stringFragmentResult = stringFragmentMapper.apply(childNode.getText());
                     if (stringFragmentResult != null) {
                         map.add(stringFragmentResult);
                     }
@@ -165,23 +227,22 @@ class PhpStringUtil {
         return phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
     }
 
-    static String getPhpSingleQuotedStringContentUnescaped(PsiElement psiElement) {
+    static String getPhpSingleQuotedStringUnescapedContent(PsiElement psiElement) {
         String escapedContent = getPhpSingleQuotedStringContent(psiElement);
         return unescapePhpSingleQuotedStringContent(escapedContent);
     }
 
-    static String getPhpSimpleHeredocContent(PsiElement psiElement) {
-        PsiElement parentPsi = psiElement.getParent();
-        List<String> stringContentFragments = mapPhpHeredocContent(parentPsi, new Function<ASTNode, String>() {
-            @Override
-            public String apply(ASTNode astNode) {
-                return astNode.getText();
-            }
-        }, null);
+    static String getPhpHeredocContent(PsiElement psiElement) {
+        List<String> stringContentFragments = mapPhpHeredocContent(psiElement, stringContract, astNodeGetText);
         return StringUtils.join(stringContentFragments, null);
     }
 
-    static String getPhpSimpleHeredocContentUnescaped(PsiElement psiElement) {
+    static String getPhpSimpleHeredocContent(PsiElement psiElement) {
+        List<String> stringContentFragments = mapPhpHeredocContent(psiElement, stringContract, null);
+        return StringUtils.join(stringContentFragments, null);
+    }
+
+    static String getPhpSimpleHeredocUnescapedContent(PsiElement psiElement) {
         String escapedContent = getPhpSimpleHeredocContent(psiElement);
         return unescapePhpHeredocContent(escapedContent);
     }
@@ -191,23 +252,21 @@ class PhpStringUtil {
      * callback function for processing string literal fragments, and other for embedded variables and expressions.
      * Delimiter identifiers are omitted since their presence is constant.
      *
-     * @param psiElement               The PHP heredoc literal whose nodes are wanted to map
-     * @param stringFragmentMapper     A Function implementation which gets a String from the ASTNode of any string
-     *                                 literal fragment on the PHP heredoc. Escape sequences are processed as separate
-     *                                 string literal fragments because of PHP Open API implementation. Any node which
-     *                                 lead to a null return value will be omitted from the result.
+     * @param psiElement               The PHP heredoc literal whose nodes are intended to map
+     * @param stringFragmentMapper     A Function implementation which processes the content of the string literal
+     *                                 fragment from the PHP string. Any fragment which lead to a null return value
+     *                                 will be omitted from the result.
      * @param embeddedExpressionMapper A Function implementation which gets a String from the ASTNode of any variable or
      *                                 expression embedded on the PHP heredoc. Any node which lead to a null return
      *                                 value will be omitted from the result.
      * @return A List of String objects containing the results of sequentially applying the PHP string pieces to the
      * provided Function implementations as determined by the node type.
      */
-    public static List<String> mapPhpHeredocContent(PsiElement psiElement, Function<ASTNode, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
+    public static List<String> mapPhpHeredocContent(PsiElement psiElement, Function<String, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
         ASTNode astNode = psiElement.getNode();
         if (astNode == null) return null;
         ASTNode[] children = astNode.getChildren(null);
-        // complex strings always have more than one child node
-        if (children.length <= 1) return null;
+        StringBuilder stringFragmentAndEscapeSequenceBuffer = new StringBuilder();
         List<String> map = new ArrayList<String>();
         for (ASTNode childNode : children) {
             IElementType pieceType = childNode.getElementType();
@@ -215,14 +274,21 @@ class PhpStringUtil {
             if (pieceType == PhpTokenTypes.HEREDOC_START || pieceType == PhpTokenTypes.HEREDOC_END) continue;
             if (pieceType == PhpTokenTypes.HEREDOC_CONTENTS || pieceType == PhpTokenTypes.ESCAPE_SEQUENCE) {
                 // the ASTNode is a piece of textual content of the string
-                if (stringFragmentMapper != null) {
-                    String stringFragmentResult = stringFragmentMapper.apply(childNode);
+                /* cummulate textual fragments since PHP OpenApi separates escape sequences from plain text - only in
+                 * heredocs */
+                stringFragmentAndEscapeSequenceBuffer.append(childNode.getText());
+            } else {
+                // the ASTNode is a variable or expression embedded in the string
+                // before processing the expression, process the cummulated string fragment if it has any contents
+                if (stringFragmentMapper != null && !stringFragmentAndEscapeSequenceBuffer.toString().isEmpty()) {
+                    String stringFragmentResult = stringFragmentMapper.apply(stringFragmentAndEscapeSequenceBuffer.toString());
                     if (stringFragmentResult != null) {
                         map.add(stringFragmentResult);
                     }
                 }
-            } else {
-                // the ASTNode is a variable or expression embedded in the string
+                // empty the textual content buffer
+                stringFragmentAndEscapeSequenceBuffer.setLength(0);
+                // process the embedded expression
                 if (embeddedExpressionMapper != null) {
                     String embeddedExpressionResult = embeddedExpressionMapper.apply(childNode);
                     if (embeddedExpressionResult != null) {
@@ -231,14 +297,21 @@ class PhpStringUtil {
                 }
             }
         }
+        // after looping all nodes, process the cummulated string content once more, if any
+        if (stringFragmentMapper != null && !stringFragmentAndEscapeSequenceBuffer.toString().isEmpty()) {
+            String stringFragmentResult = stringFragmentMapper.apply(stringFragmentAndEscapeSequenceBuffer.toString());
+            if (stringFragmentResult != null) {
+                map.add(stringFragmentResult);
+            }
+        }
         return map;
     }
 
     static String getPhpNowdocContent(PsiElement psiElement) {
-        return psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
+        return psiElement.getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
     }
 
-    static String getPhpNowdocContentUnescaped(PsiElement psiElement) {
+    static String getPhpNowdocUnescapedContent(PsiElement psiElement) {
         String escapedContent = getPhpNowdocContent(psiElement);
         return unescapePhpNowdocContent(escapedContent);
     }
@@ -247,15 +320,15 @@ class PhpStringUtil {
         return getPhpHeredocOrNowdocIdentifier(psiElement);
     }
 
-    static String getPhpNowdocIdentifier(PsiElement psiElement) {
-        return getPhpHeredocOrNowdocIdentifier(psiElement);
-    }
-
     private static String getPhpHeredocOrNowdocIdentifier(PsiElement psiElement) {
-        String heredocStart = psiElement.getParent().getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_START))[0].getText();
+        String heredocStart = psiElement.getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_START))[0].getText();
         Pattern phpIdentifierPattern = Pattern.compile(REGEXP_PHP_IDENTIFIER);
         Matcher phpIdentifierMatcher = phpIdentifierPattern.matcher(heredocStart);
         return phpIdentifierMatcher.find() ? phpIdentifierMatcher.group(0) : null;
+    }
+
+    static String getPhpNowdocIdentifier(PsiElement psiElement) {
+        return getPhpHeredocOrNowdocIdentifier(psiElement);
     }
 
     static String unescapePhpDoubleQuotedStringContent(String escapedContent) {
@@ -462,6 +535,20 @@ class PhpStringUtil {
         }
     }
 
+    public static boolean checkEscapedHeredocContentContainsIdentifierItself(String escapedContent, String
+        heredocIdentifier) {
+        return checkEscapedHeredocOrNowdocContentContainsIdentifierItself(escapedContent, heredocIdentifier);
+    }
+
+    private static boolean checkEscapedHeredocOrNowdocContentContainsIdentifierItself(String escapedContent, String heredocOrNowdocIdentifier) {
+        return escapedContent.matches("(?ms).*?^" + heredocOrNowdocIdentifier + "$.*");
+    }
+
+    public static boolean checkEscapedNowdocContentContainsIdentifierItself(String escapedContent, String
+        nowdocIdentifier) {
+        return checkEscapedHeredocOrNowdocContentContainsIdentifierItself(escapedContent, nowdocIdentifier);
+    }
+
     static StringLiteralExpression createPhpDoubleQuotedStringPsiFromContent(Project project, String unescapedContent) {
         String escapedContent = escapePhpDoubleQuotedStringContent(unescapedContent);
         return createPhpDoubleQuotedStringPsiFromEscapedContent(project, escapedContent);
@@ -496,8 +583,8 @@ class PhpStringUtil {
         String escapedContent = escapePhpNowdocContent(unescapedContent);
         /* if the nowdoc identifier itself matches an exact line inside the escaped content, nowdoc will be cropped and
          * following contents will be lost */
-        if (escapedContent.matches("(?ms).*?^" + nowdocIdentifier + "$.*")) {
-            throw new PhpStringUtilOperationException(MESSAGE_HEREDOC_CONTAINS_DELIMITER_ITSELF);
+        if (checkEscapedNowdocContentContainsIdentifierItself(escapedContent, nowdocIdentifier)){
+            throw new PhpStringUtilOperationException(MESSAGE_NOWDOC_CONTAINS_DELIMITER_ITSELF);
         }
         return createPhpNowdocPsiFromEscapedContent(project, escapedContent, nowdocIdentifier);
     }

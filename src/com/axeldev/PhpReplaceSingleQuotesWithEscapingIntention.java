@@ -9,6 +9,8 @@ import com.jetbrains.php.PhpWorkaroundUtil;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.EnumSet;
+
 public class PhpReplaceSingleQuotesWithEscapingIntention extends PsiElementBaseIntentionAction {
 
     private static final String FAMILY_NAME    = "Replace quotes";
@@ -28,22 +30,25 @@ public class PhpReplaceSingleQuotesWithEscapingIntention extends PsiElementBaseI
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) {
-        return PhpWorkaroundUtil.isIntentionAvailable(psiElement) && PhpStringUtil.isPhpSingleQuotedString(psiElement);
+        if (!PhpWorkaroundUtil.isIntentionAvailable(psiElement)) return false;
+        /* search for the closest single quoted string or double quoted string and show the intention only if the
+         * closest one is a single quoted one, this way we avoid showing intentions whose target is not clear */
+        StringLiteralExpression stringLiteralExpression = PhpStringUtil.findPhpStringLiteralExpression(psiElement, EnumSet.of(PhpStringUtil.StringType.SingleQuotedString, PhpStringUtil.StringType.DoubleQuotedString));
+        return stringLiteralExpression != null && PhpStringUtil.isPhpSingleQuotedString(stringLiteralExpression) && !PhpStringUtil.isPhpSingleQuotedEmptyString(stringLiteralExpression);
     }
 
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement psiElement) throws IncorrectOperationException {
-        if (!PhpStringUtil.isPhpSingleQuotedString(psiElement)) return;
-        PsiElement parentPsi = psiElement.getParent();
-        if (!(parentPsi instanceof StringLiteralExpression)) return;
-        StringLiteralExpression phpDoubleQuotedStringLiteralPsi = convertPhpSingleQuotedStringToDoubleQuotedString(psiElement);
-        if (phpDoubleQuotedStringLiteralPsi == null) return;
-        parentPsi.replace(phpDoubleQuotedStringLiteralPsi);
+        StringLiteralExpression singleQuotedStringLiteralExpression = PhpStringUtil.findPhpStringLiteralExpression(psiElement, PhpStringUtil.StringType.SingleQuotedString);
+        if (singleQuotedStringLiteralExpression == null) return;
+        StringLiteralExpression doubleQuotedStringLiteralExpression = convertPhpSingleQuotedStringToDoubleQuotedString(singleQuotedStringLiteralExpression);
+        if (doubleQuotedStringLiteralExpression == null) return;
+        singleQuotedStringLiteralExpression.replace(doubleQuotedStringLiteralExpression);
     }
 
-    private StringLiteralExpression convertPhpSingleQuotedStringToDoubleQuotedString(PsiElement psiElement) {
-        String stringContent = PhpStringUtil.getPhpSingleQuotedStringContentUnescaped(psiElement);
-        return PhpStringUtil.createPhpDoubleQuotedStringPsiFromContent(psiElement.getProject(), stringContent);
+    private StringLiteralExpression convertPhpSingleQuotedStringToDoubleQuotedString(StringLiteralExpression stringLiteralExpression) {
+        String stringContent = PhpStringUtil.getPhpSingleQuotedStringUnescapedContent(stringLiteralExpression);
+        return PhpStringUtil.createPhpDoubleQuotedStringPsiFromContent(stringLiteralExpression.getProject(), stringContent);
     }
 
 }
