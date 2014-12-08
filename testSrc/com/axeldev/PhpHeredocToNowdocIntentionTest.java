@@ -8,6 +8,46 @@ public class PhpHeredocToNowdocIntentionTest extends PhpFixtureTestCase {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testAvailableInSimpleString() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableAtStringsLeft() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableAtStringsRight() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInNowdoc() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInDoubleQuotedString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInSingleQuotedString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableInEmptyString() {
+        checkIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableInStringWithEscapeSequences() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableInStringWithEmbeddedVariable() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableInsideComplexExpression() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
     public void testSimpleString() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
@@ -20,31 +60,11 @@ public class PhpHeredocToNowdocIntentionTest extends PhpFixtureTestCase {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
-    public void testEmbeddedVarWithBraces() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
     public void testEmbeddedArrayWithBraces() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
-    public void testEmbeddedArrayWithUnquotedKeySyntax() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
-    public void testEmbeddedMethodCallingExpression() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
     public void testPotentialEscapeSequenceSurpassesStringEnd() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
-    public void testDifferentiateOctalCodeFromDecimalDigits() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
-    public void testOctalEscapeSequencesLength() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
@@ -56,19 +76,11 @@ public class PhpHeredocToNowdocIntentionTest extends PhpFixtureTestCase {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
-    public void testConcatArrayNumericAccess() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
-    public void testDifferentiateDecimalFromOctalArrayIndices() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
     public void testBackslashBeforeNewlineAndEndOfFragment() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
-    public void testConcatArrayVariableAccess() {
+    public void testHeredocWhichContainsIdentifierItselfSuspiciousScenarios() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 

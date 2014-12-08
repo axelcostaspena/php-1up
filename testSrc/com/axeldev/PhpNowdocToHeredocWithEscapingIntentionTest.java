@@ -8,6 +8,34 @@ public class PhpNowdocToHeredocWithEscapingIntentionTest extends PhpFixtureTestC
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testAvailableInSimpleString() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableAtStringsLeft() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableAtStringsRight() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInHeredoc() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInSingleQuotedString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInDoubleQuotedString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInEmptyString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
     public void testSimpleString() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
@@ -21,11 +49,6 @@ public class PhpNowdocToHeredocWithEscapingIntentionTest extends PhpFixtureTestC
     }
 
     public void testVariableVariable() {
-        invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
-    }
-
-    // test for #11
-    public void testExcessiveBackslashBeforeSingleQuoteEscaping() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 

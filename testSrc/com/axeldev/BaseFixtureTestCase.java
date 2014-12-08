@@ -16,7 +16,7 @@ import java.util.List;
 public abstract class BaseFixtureTestCase extends LightCodeInsightFixtureTestCase {
 
     private static File getProjectRootPath() {
-        String testPath = PathManager.getJarPathForClass(PhpHeredocToNowdocIntention.class);
+        String testPath = PathManager.getJarPathForClass(BaseFixtureTestCase.class);
         return new File(testPath, "../../..");
     }
 

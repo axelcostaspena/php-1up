@@ -8,6 +8,34 @@ public class PhpNowdocToHeredocIntentionTest extends PhpFixtureTestCase {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
 
+    public void testAvailableInSimpleString() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableAtStringsLeft() {
+        checkUniqueIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableAtStringsRight() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInHeredoc() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInSingleQuotedString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testUnavailableInDoubleQuotedString() {
+        checkIntentionUnavailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
+    public void testAvailableInEmptyString() {
+        checkIntentionAvailableTest(getTestName(false), TEST_INTENTION_NAME);
+    }
+
     public void testSimpleString() {
         invokeUniqueIntentionTest(getTestName(false), TEST_INTENTION_NAME);
     }
