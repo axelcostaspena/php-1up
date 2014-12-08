@@ -48,10 +48,46 @@ class PhpStringUtil {
     private static final String REGEXP_PHP_IDENTIFIER    = "[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*";
     private static final String REGEXP_PHP_OCTAL_INTEGER = "\\A0[0-9]+\\z";
 
+    /**
+     * Represents the four types of string literals existing on PHP.
+     *
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string">The PHP documentation:
+     * Strings</a>
+     */
     public static enum StringType {
-        DoubleQuotedString, SingleQuotedString, Heredoc, Nowdoc
+        /**
+         * Represents the double quoted PHP string literal type.
+         *
+         * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double">The PHP
+         * documentation: Strings, double quoted</a>
+         */
+        DoubleQuotedString,
+        /**
+         * Represents the single quoted PHP string literal type.
+         *
+         * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.single">The PHP
+         * documentation: Strings, single quotes</a>
+         */
+        SingleQuotedString,
+        /**
+         * Represents the heredoc PHP string literal type.
+         *
+         * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc">The
+         * PHP documentation: Strings, heredoc syntax</a>
+         */
+        Heredoc,
+        /**
+         * Represents the nowdoc quoted PHP string literal type.
+         *
+         * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.nowdoc">The PHP
+         * documentation: Strings, nowdoc syntax</a>
+         */
+        Nowdoc
     }
 
+    /**
+     * Simple contract implementation of Function which receives a String and immediately returns it.
+     */
     private static final Function<String, String> stringContract = new Function<String, String>() {
         @Override
         public String apply(String string) {
@@ -59,6 +95,9 @@ class PhpStringUtil {
         }
     };
 
+    /**
+     * Implementation of Function which receives an ASTNode and returns its text.
+     */
     private static final Function<ASTNode, String> astNodeGetText = new Function<ASTNode, String>() {
         @Override
         public String apply(ASTNode astNode) {
@@ -66,10 +105,28 @@ class PhpStringUtil {
         }
     };
 
+    /**
+     * Walks up the PSI element tree from the provided element until it finds an element which satisfies the specified
+     * PHP string literal type.
+     *
+     * @param psiElement The PsiElement from which to start the search.
+     * @param stringType A StringType value specifying the target PHP string literal type to match.
+     * @return The mathing element if found any, or null of the document root is reached wihtout success or the
+     * document is not suitable for PHP element searching.
+     */
     static StringLiteralExpression findPhpStringLiteralExpression(PsiElement psiElement, StringType stringType) {
         return findPhpStringLiteralExpression(psiElement, EnumSet.of(stringType));
     }
 
+    /**
+     * Walks up the PSI element tree from the provided element until it finds an element which satisfies one of the
+     * specified PHP string literal types.
+     *
+     * @param psiElement    The PsiElement from which to start the search.
+     * @param stringTypeSet A set of StringType values specifying the target PHP string literal types to match.
+     * @return The mathing element if found any, or null of the document root is reached wihtout success or the
+     * document is not suitable for PHP element searching.
+     */
     static StringLiteralExpression findPhpStringLiteralExpression(PsiElement psiElement, EnumSet<StringType> stringTypeSet) {
         if (psiElement instanceof PhpFile) return null;
         if (psiElement instanceof StringLiteralExpression) {
@@ -97,51 +154,108 @@ class PhpStringUtil {
         return parentPsi != null ? findPhpStringLiteralExpression(parentPsi, stringTypeSet) : null;
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP double quoted string literal.
+     *
+     * @param stringLiteralExpression The string literal whose type will be checked.
+     * @return True if the element is a double quoted string literal, false if it's of another type of string literal.
+     */
     static boolean isPhpDoubleQuotedString(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.STRING_LITERAL || firstChildNodeType == PhpTokenTypes.chLDOUBLE_QUOTE;
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP double quoted string literal and has no contents.
+     *
+     * @param stringLiteralExpression The string literal whose type and contents will be checked.
+     * @return True if the element is an empty double quoted string literal, false if it has any contents or it's of
+     * another type of string literal.
+     */
     static boolean isPhpDoubleQuotedEmptyString(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.STRING_LITERAL && stringLiteralExpression.getText().equals("\"\"");
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP double quoted string literal which contains any embedded
+     * variable or expression.
+     *
+     * @param stringLiteralExpression The string literal whose type and contents will be checked.
+     * @return True if the element is a double quoted string literal and has some embedded expression inside, false if
+     * its contents are plain or empty, or if it's of another type of string literal.
+     */
     static boolean isPhpDoubleQuotedComplexString(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.chLDOUBLE_QUOTE;
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP single quoted string literal.
+     *
+     * @param stringLiteralExpression The string literal whose type will be checked.
+     * @return True if the element is a single quoted string literal, false if it's of another type of string literal.
+     */
     static boolean isPhpSingleQuotedString(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE;
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP single quoted string literal and has no contents.
+     *
+     * @param stringLiteralExpression The string literal whose type and contents will be checked.
+     * @return True if the element is an empty single quoted string literal, false if it has any contents or it's of
+     * another type of string literal.
+     */
     static boolean isPhpSingleQuotedEmptyString(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.STRING_LITERAL_SINGLE_QUOTE && stringLiteralExpression.getText().equals("''");
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP heredoc string literal.
+     *
+     * @param stringLiteralExpression The string literal whose type will be checked.
+     * @return True if the element is an heredoc string literal, false if it's of another type of string literal.
+     */
     static boolean isPhpHeredoc(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.HEREDOC_START && !firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP heredoc string literal and has no contents.
+     *
+     * @param stringLiteralExpression The string literal whose type and contents will be checked.
+     * @return True if the element is an empty heredoc string literal, false if it has any contents or it's of another
+     * type of string literal.
+     */
     static boolean isPhpEmptyHeredoc(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
-        if (firstChildNodeType != PhpTokenTypes.HEREDOC_START || firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE))) return false;
+        if (firstChildNodeType != PhpTokenTypes.HEREDOC_START || firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE))) {
+            return false;
+        }
         ASTNode astNode = stringLiteralExpression.getNode();
         TokenSet tokenSetNonHeredocDelimiters = TokenSet.create(PhpTokenTypes.HEREDOC_START, PhpTokenTypes.HEREDOC_END);
         return astNode.getChildren(null).length == astNode.getChildren(tokenSetNonHeredocDelimiters).length;
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP heredoc string literal which contains any embedded
+     * variable or expression.
+     *
+     * @param stringLiteralExpression The string literal whose type and contents will be checked.
+     * @return True if the element is a heredoc string literal and has some embedded expression inside, false if its
+     * contents are plain or empty, or if it's of another type of string literal.
+     */
     static boolean isPhpComplexHeredoc(StringLiteralExpression stringLiteralExpression) {
         if (!isPhpHeredoc(stringLiteralExpression)) return false;
         ASTNode astNode = stringLiteralExpression.getNode();
@@ -150,37 +264,67 @@ class PhpStringUtil {
         return astNode.getChildren(null).length > astNode.getChildren(tokenSetNonEmbeddedExpressionContents).length;
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP nowdos string literal.
+     *
+     * @param stringLiteralExpression The string literal whose type will be checked.
+     * @return True if the element is a nowdos string literal, false if it's of another type of string literal.
+     */
     static boolean isPhpNowdoc(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
         return firstChildNodeType == PhpTokenTypes.HEREDOC_START && firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE));
     }
 
+    /**
+     * Checks wether a StringLiteralExpression represents a PHP nowdoc string literal and has no contents.
+     *
+     * @param stringLiteralExpression The string literal whose type and contents will be checked.
+     * @return True if the element is an empty nowdoc string literal, false if it has any contents or it's of
+     * another type of string literal.
+     */
     static boolean isPhpEmptyNowdoc(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
         IElementType firstChildNodeType = firstChildNode.getElementType();
-        if (firstChildNodeType != PhpTokenTypes.HEREDOC_START || !firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE))) return false;
+        if (firstChildNodeType != PhpTokenTypes.HEREDOC_START || !firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE))) {
+            return false;
+        }
         ASTNode astNode = stringLiteralExpression.getNode();
         TokenSet tokenSetNonHeredocDelimiters = TokenSet.create(PhpTokenTypes.HEREDOC_START, PhpTokenTypes.HEREDOC_END);
         return astNode.getChildren(null).length == astNode.getChildren(tokenSetNonHeredocDelimiters).length;
     }
 
-    static String getPhpDoubleQuotedStringContent(PsiElement psiElement) {
-        String phpStringLiteral = psiElement.getText();
+    /**
+     * Gets the string content fragment on a PHP double quoted string literal.
+     * @param stringLiteralExpression The subject double quoted string literal.
+     * @return The text resulting from removing the delimiter quotes around the string literal content.
+     */
+    static String getPhpDoubleQuotedStringContent(StringLiteralExpression stringLiteralExpression) {
+        String phpStringLiteral = stringLiteralExpression.getText();
         return phpStringLiteral.substring(1, phpStringLiteral.length() - 1);
     }
 
-    static String getPhpDoubleQuotedSimpleStringUnescapedContent(PsiElement psiElement) {
-        String escapedContent = getPhpDoubleQuotedStringContent(psiElement);
+    /**
+     * Gets the string content fragment on a PHP double quoted string literal and unescapes it. This method is intended
+     * for use on string literals without embedded variables or expressions only; embedded expressions will be discarded
+     * from the resulting content.
+     * @param stringLiteralExpression The subject double quoted string literal.
+     * @return The text resulting from removing the delimiter quotes around the string literal content and unescaping
+     * the special sequences the string may contain according to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double">The PHP
+     * documentation: Strings, double quoted</a>
+     */
+    static String getPhpDoubleQuotedSimpleStringUnescapedContent(StringLiteralExpression stringLiteralExpression) {
+        String escapedContent = getPhpDoubleQuotedStringContent(stringLiteralExpression);
         return unescapePhpDoubleQuotedStringContent(escapedContent);
     }
 
     /**
-     * Gets the child nodes of a PHP double quoted string psiElement and maps them to a List of String values. Allows to
-     * specify a callback function for processing string literal fragments, and other for embedded variables and
-     * expressions. Delimiter double quotes are omitted since their presence is constant.
+     * Gets the child nodes of a PHP double quoted string StringLiteralExpression and maps them to a List of String
+     * values. Allows to specify a callback function for processing string literal fragments, and another for embedded
+     * variables and expressions. Delimiter double quotes are omitted since their presence is constant.
      *
-     * @param psiElement               The PHP double quoted string literal whose nodes are intended to map
+     * @param stringLiteralExpression  The PHP double quoted string literal whose nodes are intended to map.
      * @param stringFragmentMapper     A Function implementation which processes the content of the string literal
      *                                 fragment from the PHP string. Any fragment which lead to a null return value
      *                                 will be omitted from the result.
@@ -190,8 +334,8 @@ class PhpStringUtil {
      * @return A List of String objects containing the results of sequentially applying the PHP string pieces to the
      * provided Function implementations as determined by the node type.
      */
-    public static List<String> mapPhpDoubleQuotedComplexStringContent(PsiElement psiElement, Function<String, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
-        ASTNode astNode = psiElement.getNode();
+    public static List<String> mapPhpDoubleQuotedComplexStringContent(StringLiteralExpression stringLiteralExpression, Function<String, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
+        ASTNode astNode = stringLiteralExpression.getNode();
         if (astNode == null) return null;
         ASTNode[] children = astNode.getChildren(null);
         // if string has single node then it isn't complex
@@ -222,37 +366,71 @@ class PhpStringUtil {
         return map;
     }
 
-    static String getPhpSingleQuotedStringContent(PsiElement psiElement) {
-        String phpStringLiteralText = psiElement.getText();
+    /**
+     * Gets the string content fragment on a PHP single quoted string literal.
+     * @param stringLiteralExpression The subject single quoted string literal.
+     * @return The text resulting from removing the delimiter quotes around the string literal content.
+     */
+    static String getPhpSingleQuotedStringContent(StringLiteralExpression stringLiteralExpression) {
+        String phpStringLiteralText = stringLiteralExpression.getText();
         return phpStringLiteralText.substring(1, phpStringLiteralText.length() - 1);
     }
 
-    static String getPhpSingleQuotedStringUnescapedContent(PsiElement psiElement) {
-        String escapedContent = getPhpSingleQuotedStringContent(psiElement);
+    /**
+     * Gets the string content fragment on a PHP single quoted string literal and unescapes it.
+     * @param stringLiteralExpression The subject single quoted string literal.
+     * @return The text resulting from removing the delimiter quotes around the string literal content and unescaping
+     * the special sequences the string may contain according to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.single">The PHP
+     * documentation: Strings, single quoted</a>
+     */
+    static String getPhpSingleQuotedStringUnescapedContent(StringLiteralExpression stringLiteralExpression) {
+        String escapedContent = getPhpSingleQuotedStringContent(stringLiteralExpression);
         return unescapePhpSingleQuotedStringContent(escapedContent);
     }
 
-    static String getPhpHeredocContent(PsiElement psiElement) {
-        List<String> stringContentFragments = mapPhpHeredocContent(psiElement, stringContract, astNodeGetText);
+    /**
+     * Gets the string content fragment on a PHP heredoc string literal.
+     * @param stringLiteralExpression The subject heredoc string literal.
+     * @return The text resulting from removing the heredoc delimiters around the string literal content.
+     */
+    static String getPhpHeredocContent(StringLiteralExpression stringLiteralExpression) {
+        List<String> stringContentFragments = mapPhpHeredocContent(stringLiteralExpression, stringContract, astNodeGetText);
         return StringUtils.join(stringContentFragments, null);
     }
 
-    static String getPhpSimpleHeredocContent(PsiElement psiElement) {
-        List<String> stringContentFragments = mapPhpHeredocContent(psiElement, stringContract, null);
+    /**
+     * Gets the string content fragment on a PHP heredoc string literal which is guaranteed to contain no embedded
+     * expressions.
+     * @param stringLiteralExpression The subject heredoc string literal.
+     * @return The text resulting from removing the heredoc delimiters around the string literal content.
+     */
+    private static String getPhpSimpleHeredocContent(StringLiteralExpression stringLiteralExpression) {
+        List<String> stringContentFragments = mapPhpHeredocContent(stringLiteralExpression, stringContract, null);
         return StringUtils.join(stringContentFragments, null);
     }
 
-    static String getPhpSimpleHeredocUnescapedContent(PsiElement psiElement) {
-        String escapedContent = getPhpSimpleHeredocContent(psiElement);
+    /**
+     * Gets the string content fragment on a PHP heredoc string literal and unescapes it. This method is intended for
+     * use on heredocs without embedded variables or expressions only; embedded expressions will be discarded from
+     * the resulting content.
+     * @param stringLiteralExpression The subject heredoc string literal.
+     * @return The text resulting from removing the heredoc delimiters around the string literal content and unescaping
+     * the special sequences the string may contain according to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc">The PHP
+     * documentation: Strings, heredoc</a>
+     */
+    static String getPhpSimpleHeredocUnescapedContent(StringLiteralExpression stringLiteralExpression) {
+        String escapedContent = getPhpSimpleHeredocContent(stringLiteralExpression);
         return unescapePhpHeredocContent(escapedContent);
     }
 
     /**
-     * Gets the child nodes of a PHP heredoc psiElement and maps them to a List of String values. Allows to specify a
-     * callback function for processing string literal fragments, and other for embedded variables and expressions.
-     * Delimiter identifiers are omitted since their presence is constant.
+     * Gets the child nodes of a PHP heredoc StringLiteralExpression and maps them to a List of String values. Allows
+     * to specify a callback function for processing string literal fragments, and another for embedded variables and
+     * expressions. Delimiter identifiers are omitted since their presence is constant.
      *
-     * @param psiElement               The PHP heredoc literal whose nodes are intended to map
+     * @param stringLiteralExpression               The PHP heredoc string literal whose nodes are intended to map.
      * @param stringFragmentMapper     A Function implementation which processes the content of the string literal
      *                                 fragment from the PHP string. Any fragment which lead to a null return value
      *                                 will be omitted from the result.
@@ -262,8 +440,8 @@ class PhpStringUtil {
      * @return A List of String objects containing the results of sequentially applying the PHP string pieces to the
      * provided Function implementations as determined by the node type.
      */
-    public static List<String> mapPhpHeredocContent(PsiElement psiElement, Function<String, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
-        ASTNode astNode = psiElement.getNode();
+    public static List<String> mapPhpHeredocContent(StringLiteralExpression stringLiteralExpression, Function<String, String> stringFragmentMapper, Function<ASTNode, String> embeddedExpressionMapper) {
+        ASTNode astNode = stringLiteralExpression.getNode();
         if (astNode == null) return null;
         ASTNode[] children = astNode.getChildren(null);
         StringBuilder stringFragmentAndEscapeSequenceBuffer = new StringBuilder();
@@ -307,30 +485,67 @@ class PhpStringUtil {
         return map;
     }
 
-    static String getPhpNowdocContent(PsiElement psiElement) {
-        return psiElement.getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
+    /**
+     * Gets the string content fragment on a PHP nowdoc string literal.
+     * @param stringLiteralExpression The subject nowdoc string literal.
+     * @return The text resulting from removing the nowdoc delimiters around the string literal content.
+     */
+    static String getPhpNowdocContent(StringLiteralExpression stringLiteralExpression) {
+        return stringLiteralExpression.getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_CONTENTS))[0].getText();
     }
 
-    static String getPhpNowdocUnescapedContent(PsiElement psiElement) {
-        String escapedContent = getPhpNowdocContent(psiElement);
+    /**
+     * Gets the string content fragment on a PHP nowdoc string literal and unescapes it.
+     * @param stringLiteralExpression The subject nowdoc string literal.
+     * @return The text resulting from removing the nowdoc delimiters around the string literal content and unescaping
+     * the special sequences the string may contain according to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.nowdoc">The PHP
+     * documentation: Strings, nowdoc</a>
+     */
+    static String getPhpNowdocUnescapedContent(StringLiteralExpression stringLiteralExpression) {
+        String escapedContent = getPhpNowdocContent(stringLiteralExpression);
         return unescapePhpNowdocContent(escapedContent);
     }
 
-    static String getPhpHeredocIdentifier(PsiElement psiElement) {
-        return getPhpHeredocOrNowdocIdentifier(psiElement);
+    /**
+     * Gets the identifier part of the heredoc delimiter on an heredoc string literal.
+     * @param stringLiteralExpression The subject heredoc string literal.
+     * @return The identifier of the heredoc delimiter or null if the provided string literal isn't of the right type.
+     */
+    static String getPhpHeredocIdentifier(StringLiteralExpression stringLiteralExpression) {
+        return getPhpHeredocOrNowdocIdentifier(stringLiteralExpression);
     }
 
-    private static String getPhpHeredocOrNowdocIdentifier(PsiElement psiElement) {
-        String heredocStart = psiElement.getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_START))[0].getText();
+    /**
+     * Gets the identifier part of the heredoc or nowdoc delimiter on an heredoc or nowdoc string literal.
+     * @param stringLiteralExpression The subject heredoc or nowdoc string literal.
+     * @return The identifier of the heredoc or nowdoc delimiter or null if the provided string literal isn't of the
+     * right type.
+     */
+    private static String getPhpHeredocOrNowdocIdentifier(StringLiteralExpression stringLiteralExpression) {
+        String heredocStart = stringLiteralExpression.getNode().getChildren(TokenSet.create(PhpTokenTypes.HEREDOC_START))[0].getText();
         Pattern phpIdentifierPattern = Pattern.compile(REGEXP_PHP_IDENTIFIER);
         Matcher phpIdentifierMatcher = phpIdentifierPattern.matcher(heredocStart);
         return phpIdentifierMatcher.find() ? phpIdentifierMatcher.group(0) : null;
     }
 
-    static String getPhpNowdocIdentifier(PsiElement psiElement) {
-        return getPhpHeredocOrNowdocIdentifier(psiElement);
+    /**
+     * Gets the identifier part of the nowdoc delimiter on an nowdoc string literal.
+     * @param stringLiteralExpression The subject nowdoc string literal.
+     * @return The identifier of the nowdoc delimiter or null if the provided string literal isn't of the right type.
+     */
+    static String getPhpNowdocIdentifier(StringLiteralExpression stringLiteralExpression) {
+        return getPhpHeredocOrNowdocIdentifier(stringLiteralExpression);
     }
 
+    /**
+     * Unescape a text fragment coming from a PHP double quoted string literal's content in order to get its real value.
+     * @param escapedContent The original text fragment.
+     * @return The text resulting from unescaping the special sequences the string may contain according to the language
+     * string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double">The PHP
+     * documentation: Strings, double quoted</a>
+     */
     static String unescapePhpDoubleQuotedStringContent(String escapedContent) {
         return unescapePhpDoubleQuotedLikeStringContent(escapedContent, true);
     }
@@ -445,16 +660,40 @@ class PhpStringUtil {
         return unescapedContentBuffer.toString();
     }
 
+    /**
+     * Unescape a text fragment coming from a PHP single quoted string literal's content in order to get its real value.
+     * @param escapedContent The original text fragment.
+     * @return The text resulting from unescaping the special sequences the string may contain according to the language
+     * string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.single">The PHP
+     * documentation: Strings, single quoted</a>
+     */
     static String unescapePhpSingleQuotedStringContent(String escapedContent) {
         return escapedContent
             .replace("\\\\", Character.toString(CHAR_BACKSLASH))
             .replace("\\'", Character.toString(CHAR_SINGLE_QUOTE));
     }
 
+    /**
+     * Unescape a text fragment coming from a PHP heredoc string literal's content in order to get its real value.
+     * @param escapedContent The original text fragment.
+     * @return The text resulting from unescaping the special sequences the string may contain according to the language
+     * string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc">The PHP
+     * documentation: Strings, heredoc</a>
+     */
     static String unescapePhpHeredocContent(String escapedContent) {
         return unescapePhpDoubleQuotedLikeStringContent(escapedContent, false);
     }
 
+    /**
+     * Unescape a text fragment coming from a PHP nowdoc string literal's content in order to get its real value.
+     * @param escapedContent The original text fragment.
+     * @return The text resulting from unescaping the special sequences the string may contain according to the language
+     * string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.nowdoc">The PHP
+     * documentation: Strings, nowdoc</a>
+     */
     static String unescapePhpNowdocContent(String escapedContent) {
         // nowdoc string literals' content is exact, no escaping is possible
         return escapedContent;
@@ -583,7 +822,7 @@ class PhpStringUtil {
         String escapedContent = escapePhpNowdocContent(unescapedContent);
         /* if the nowdoc identifier itself matches an exact line inside the escaped content, nowdoc will be cropped and
          * following contents will be lost */
-        if (checkEscapedNowdocContentContainsIdentifierItself(escapedContent, nowdocIdentifier)){
+        if (checkEscapedNowdocContentContainsIdentifierItself(escapedContent, nowdocIdentifier)) {
             throw new PhpStringUtilOperationException(MESSAGE_NOWDOC_CONTAINS_DELIMITER_ITSELF);
         }
         return createPhpNowdocPsiFromEscapedContent(project, escapedContent, nowdocIdentifier);
