@@ -21,7 +21,8 @@ import java.util.regex.Pattern;
 
 class PhpStringUtil {
 
-    private static final String MESSAGE_NOWDOC_CONTAINS_DELIMITER_ITSELF = "Error on creating NOWDOC string literal.\nNOWDOC content contains the NOWDOC delimiter itself.";
+    private static final String MESSAGE_NOWDOC_CONTAINS_DELIMITER_ITSELF =
+            "Error on creating NOWDOC string literal.\nNOWDOC content contains the NOWDOC delimiter itself.";
 
     private static final char CHAR_VERTICAL_TAB         = (char) 11;
     private static final char CHAR_ESC                  = (char) 27;
@@ -66,21 +67,21 @@ class PhpStringUtil {
          * Represents the single quoted PHP string literal type.
          *
          * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.single">The PHP
-         * documentation: Strings, single quotes</a>
+         * documentation: Strings, single quoted</a>
          */
         SingleQuotedString,
         /**
          * Represents the heredoc PHP string literal type.
          *
          * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc">The
-         * PHP documentation: Strings, heredoc syntax</a>
+         * PHP documentation: Strings, heredoc</a>
          */
         Heredoc,
         /**
          * Represents the nowdoc quoted PHP string literal type.
          *
          * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.nowdoc">The PHP
-         * documentation: Strings, nowdoc syntax</a>
+         * documentation: Strings, nowdoc</a>
          */
         Nowdoc
     }
@@ -111,7 +112,7 @@ class PhpStringUtil {
      *
      * @param psiElement The PsiElement from which to start the search.
      * @param stringType A StringType value specifying the target PHP string literal type to match.
-     * @return The mathing element if found any, or null of the document root is reached wihtout success or the
+     * @return The matching element if found any, or null of the document root is reached without success or the
      * document is not suitable for PHP element searching.
      */
     static StringLiteralExpression findPhpStringLiteralExpression(PsiElement psiElement, StringType stringType) {
@@ -124,10 +125,12 @@ class PhpStringUtil {
      *
      * @param psiElement    The PsiElement from which to start the search.
      * @param stringTypeSet A set of StringType values specifying the target PHP string literal types to match.
-     * @return The mathing element if found any, or null of the document root is reached wihtout success or the
+     * @return The matching element if found any, or null of the document root is reached without success or the
      * document is not suitable for PHP element searching.
      */
-    static StringLiteralExpression findPhpStringLiteralExpression(PsiElement psiElement, EnumSet<StringType> stringTypeSet) {
+    static StringLiteralExpression findPhpStringLiteralExpression(
+            PsiElement psiElement, EnumSet<StringType> stringTypeSet
+    ) {
         if (psiElement instanceof PhpFile) return null;
         if (psiElement instanceof StringLiteralExpression) {
             StringLiteralExpression stringLiteralExpression = (StringLiteralExpression) psiElement;
@@ -143,9 +146,9 @@ class PhpStringUtil {
                 }
             } else if (firstChildNodeType == PhpTokenTypes.HEREDOC_START) {
                 boolean isNowdoc = firstChildNode.getText().contains(Character.toString(CHAR_SINGLE_QUOTE)),
-                    isHeredoc = !isNowdoc;
+                        isHeredoc = !isNowdoc;
                 if ((stringTypeSet.contains(StringType.Heredoc) && isHeredoc) ||
-                    (stringTypeSet.contains(StringType.Nowdoc) && isNowdoc)) {
+                        (stringTypeSet.contains(StringType.Nowdoc) && isNowdoc)) {
                     return stringLiteralExpression;
                 }
             }
@@ -155,7 +158,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP double quoted string literal.
+     * Checks whether a StringLiteralExpression represents a PHP double quoted string literal.
      *
      * @param stringLiteralExpression The string literal whose type will be checked.
      * @return True if the element is a double quoted string literal, false if it's of another type of string literal.
@@ -167,7 +170,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP double quoted string literal and has no contents.
+     * Checks whether a StringLiteralExpression represents a PHP double quoted string literal and has no contents.
      *
      * @param stringLiteralExpression The string literal whose type and contents will be checked.
      * @return True if the element is an empty double quoted string literal, false if it has any contents or it's of
@@ -180,7 +183,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP double quoted string literal which contains any embedded
+     * Checks whether a StringLiteralExpression represents a PHP double quoted string literal which contains any embedded
      * variable or expression.
      *
      * @param stringLiteralExpression The string literal whose type and contents will be checked.
@@ -194,7 +197,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP single quoted string literal.
+     * Checks whether a StringLiteralExpression represents a PHP single quoted string literal.
      *
      * @param stringLiteralExpression The string literal whose type will be checked.
      * @return True if the element is a single quoted string literal, false if it's of another type of string literal.
@@ -206,7 +209,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP single quoted string literal and has no contents.
+     * Checks whether a StringLiteralExpression represents a PHP single quoted string literal and has no contents.
      *
      * @param stringLiteralExpression The string literal whose type and contents will be checked.
      * @return True if the element is an empty single quoted string literal, false if it has any contents or it's of
@@ -219,7 +222,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP heredoc string literal.
+     * Checks whether a StringLiteralExpression represents a PHP heredoc string literal.
      *
      * @param stringLiteralExpression The string literal whose type will be checked.
      * @return True if the element is an heredoc string literal, false if it's of another type of string literal.
@@ -231,7 +234,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP heredoc string literal and has no contents.
+     * Checks whether a StringLiteralExpression represents a PHP heredoc string literal and has no contents.
      *
      * @param stringLiteralExpression The string literal whose type and contents will be checked.
      * @return True if the element is an empty heredoc string literal, false if it has any contents or it's of another
@@ -249,7 +252,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP heredoc string literal which contains any embedded
+     * Checks whether a StringLiteralExpression represents a PHP heredoc string literal which contains any embedded
      * variable or expression.
      *
      * @param stringLiteralExpression The string literal whose type and contents will be checked.
@@ -265,10 +268,10 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP nowdos string literal.
+     * Checks whether a StringLiteralExpression represents a PHP nowdos string literal.
      *
      * @param stringLiteralExpression The string literal whose type will be checked.
-     * @return True if the element is a nowdos string literal, false if it's of another type of string literal.
+     * @return True if the element is a nowdoc string literal, false if it's of another type of string literal.
      */
     static boolean isPhpNowdoc(StringLiteralExpression stringLiteralExpression) {
         ASTNode firstChildNode = stringLiteralExpression.getFirstChild().getNode();
@@ -277,7 +280,7 @@ class PhpStringUtil {
     }
 
     /**
-     * Checks wether a StringLiteralExpression represents a PHP nowdoc string literal and has no contents.
+     * Checks whether a StringLiteralExpression represents a PHP nowdoc string literal and has no contents.
      *
      * @param stringLiteralExpression The string literal whose type and contents will be checked.
      * @return True if the element is an empty nowdoc string literal, false if it has any contents or it's of
@@ -296,6 +299,7 @@ class PhpStringUtil {
 
     /**
      * Gets the string content fragment on a PHP double quoted string literal.
+     *
      * @param stringLiteralExpression The subject double quoted string literal.
      * @return The text resulting from removing the delimiter quotes around the string literal content.
      */
@@ -308,6 +312,7 @@ class PhpStringUtil {
      * Gets the string content fragment on a PHP double quoted string literal and unescapes it. This method is intended
      * for use on string literals without embedded variables or expressions only; embedded expressions will be discarded
      * from the resulting content.
+     *
      * @param stringLiteralExpression The subject double quoted string literal.
      * @return The text resulting from removing the delimiter quotes around the string literal content and unescaping
      * the special sequences the string may contain according to the language string parsing specification.
@@ -368,6 +373,7 @@ class PhpStringUtil {
 
     /**
      * Gets the string content fragment on a PHP single quoted string literal.
+     *
      * @param stringLiteralExpression The subject single quoted string literal.
      * @return The text resulting from removing the delimiter quotes around the string literal content.
      */
@@ -378,6 +384,7 @@ class PhpStringUtil {
 
     /**
      * Gets the string content fragment on a PHP single quoted string literal and unescapes it.
+     *
      * @param stringLiteralExpression The subject single quoted string literal.
      * @return The text resulting from removing the delimiter quotes around the string literal content and unescaping
      * the special sequences the string may contain according to the language string parsing specification.
@@ -391,6 +398,7 @@ class PhpStringUtil {
 
     /**
      * Gets the string content fragment on a PHP heredoc string literal.
+     *
      * @param stringLiteralExpression The subject heredoc string literal.
      * @return The text resulting from removing the heredoc delimiters around the string literal content.
      */
@@ -402,6 +410,7 @@ class PhpStringUtil {
     /**
      * Gets the string content fragment on a PHP heredoc string literal which is guaranteed to contain no embedded
      * expressions.
+     *
      * @param stringLiteralExpression The subject heredoc string literal.
      * @return The text resulting from removing the heredoc delimiters around the string literal content.
      */
@@ -414,6 +423,7 @@ class PhpStringUtil {
      * Gets the string content fragment on a PHP heredoc string literal and unescapes it. This method is intended for
      * use on heredocs without embedded variables or expressions only; embedded expressions will be discarded from
      * the resulting content.
+     *
      * @param stringLiteralExpression The subject heredoc string literal.
      * @return The text resulting from removing the heredoc delimiters around the string literal content and unescaping
      * the special sequences the string may contain according to the language string parsing specification.
@@ -430,7 +440,7 @@ class PhpStringUtil {
      * to specify a callback function for processing string literal fragments, and another for embedded variables and
      * expressions. Delimiter identifiers are omitted since their presence is constant.
      *
-     * @param stringLiteralExpression               The PHP heredoc string literal whose nodes are intended to map.
+     * @param stringLiteralExpression  The PHP heredoc string literal whose nodes are intended to map.
      * @param stringFragmentMapper     A Function implementation which processes the content of the string literal
      *                                 fragment from the PHP string. Any fragment which lead to a null return value
      *                                 will be omitted from the result.
@@ -487,6 +497,7 @@ class PhpStringUtil {
 
     /**
      * Gets the string content fragment on a PHP nowdoc string literal.
+     *
      * @param stringLiteralExpression The subject nowdoc string literal.
      * @return The text resulting from removing the nowdoc delimiters around the string literal content.
      */
@@ -496,6 +507,7 @@ class PhpStringUtil {
 
     /**
      * Gets the string content fragment on a PHP nowdoc string literal and unescapes it.
+     *
      * @param stringLiteralExpression The subject nowdoc string literal.
      * @return The text resulting from removing the nowdoc delimiters around the string literal content and unescaping
      * the special sequences the string may contain according to the language string parsing specification.
@@ -509,6 +521,7 @@ class PhpStringUtil {
 
     /**
      * Gets the identifier part of the heredoc delimiter on an heredoc string literal.
+     *
      * @param stringLiteralExpression The subject heredoc string literal.
      * @return The identifier of the heredoc delimiter or null if the provided string literal isn't of the right type.
      */
@@ -518,6 +531,7 @@ class PhpStringUtil {
 
     /**
      * Gets the identifier part of the heredoc or nowdoc delimiter on an heredoc or nowdoc string literal.
+     *
      * @param stringLiteralExpression The subject heredoc or nowdoc string literal.
      * @return The identifier of the heredoc or nowdoc delimiter or null if the provided string literal isn't of the
      * right type.
@@ -531,6 +545,7 @@ class PhpStringUtil {
 
     /**
      * Gets the identifier part of the nowdoc delimiter on an nowdoc string literal.
+     *
      * @param stringLiteralExpression The subject nowdoc string literal.
      * @return The identifier of the nowdoc delimiter or null if the provided string literal isn't of the right type.
      */
@@ -540,6 +555,7 @@ class PhpStringUtil {
 
     /**
      * Unescape a text fragment coming from a PHP double quoted string literal's content in order to get its real value.
+     *
      * @param escapedContent The original text fragment.
      * @return The text resulting from unescaping the special sequences the string may contain according to the language
      * string parsing specification.
@@ -550,6 +566,21 @@ class PhpStringUtil {
         return unescapePhpDoubleQuotedLikeStringContent(escapedContent, true);
     }
 
+    /**
+     * Unescape a text fragment generally according to the language double quoted string and heredoc string parsing,
+     * with the only difference of unescaping backslash preceded double quotes or leaving the sequence as-is. This
+     * behavior is controlled by a boolean flag.
+     *
+     * @param escapedContent        The original text fragment.
+     * @param doubleQuotedIsEscaped Tells whether double quotes are expected to be found escaped with a backslash, or
+     *                              they should be interpreted in an unescaped form.
+     * @return The text resulting from unescaping the special sequences the string may contain according to the language
+     * string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double">The PHP
+     * documentation: Strings, double quoted</a>
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc">The PHP
+     * documentation: Strings, heredoc</a>
+     */
     private static String unescapePhpDoubleQuotedLikeStringContent(String escapedContent, boolean doubleQuotedIsEscaped) {
         CharEnumeration charEnumeration = new CharEnumeration(escapedContent.toCharArray());
         StringBuilder unescapedContentBuffer = new StringBuilder();
@@ -662,6 +693,7 @@ class PhpStringUtil {
 
     /**
      * Unescape a text fragment coming from a PHP single quoted string literal's content in order to get its real value.
+     *
      * @param escapedContent The original text fragment.
      * @return The text resulting from unescaping the special sequences the string may contain according to the language
      * string parsing specification.
@@ -670,12 +702,13 @@ class PhpStringUtil {
      */
     static String unescapePhpSingleQuotedStringContent(String escapedContent) {
         return escapedContent
-            .replace("\\\\", Character.toString(CHAR_BACKSLASH))
-            .replace("\\'", Character.toString(CHAR_SINGLE_QUOTE));
+                .replace("\\\\", Character.toString(CHAR_BACKSLASH))
+                .replace("\\'", Character.toString(CHAR_SINGLE_QUOTE));
     }
 
     /**
      * Unescape a text fragment coming from a PHP heredoc string literal's content in order to get its real value.
+     *
      * @param escapedContent The original text fragment.
      * @return The text resulting from unescaping the special sequences the string may contain according to the language
      * string parsing specification.
@@ -688,6 +721,7 @@ class PhpStringUtil {
 
     /**
      * Unescape a text fragment coming from a PHP nowdoc string literal's content in order to get its real value.
+     *
      * @param escapedContent The original text fragment.
      * @return The text resulting from unescaping the special sequences the string may contain according to the language
      * string parsing specification.
@@ -699,6 +733,16 @@ class PhpStringUtil {
         return escapedContent;
     }
 
+    /**
+     * Escape a text fragment according to the PHP double quoted string literal syntax in order to make it ready for
+     * insertion within corresponding string literal delimiters in a PHP document.
+     *
+     * @param unescapedContent The plain text fragment to be escaped.
+     * @return The text resulting from escaping any character with any special meaning the string may contain according
+     * to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double">The PHP
+     * documentation: Strings, double quoted</a>
+     */
     static String escapePhpDoubleQuotedStringContent(String unescapedContent) {
         // all allowed escape sequences in a double quoted string must be escaped with a backslash
         // see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double
@@ -706,15 +750,35 @@ class PhpStringUtil {
         // a PHP variable identifier is defined by the regexp `[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*`
         // see http://php.net/manual/en/language.variables.basics.php
         String variablesEscaped = escapeSequencesEscaped
-            .replaceAll("(\\$[a-zA-Z_\\x7f-\\xff])", "\\\\$1")
-            .replaceAll("\\{\\$", "{\\\\\\$");
+                .replaceAll("(\\$[a-zA-Z_\\x7f-\\xff])", "\\\\$1")
+                .replaceAll("\\{\\$", "{\\\\\\$");
         return variablesEscaped.replace(Character.toString(CHAR_DOUBLE_QUOTE), "\\\"");
     }
 
+    /**
+     * Escape a text fragment according to the PHP single quoted string literal syntax in order to make it ready for
+     * insertion within corresponding string literal delimiters in a PHP document.
+     *
+     * @param unescapedContent The plain text fragment to be escaped.
+     * @return The text resulting from escaping any character with any special meaning the string may contain according
+     * to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.single">The PHP
+     * documentation: Strings, single quoted</a>
+     */
     static String escapePhpSingleQuotedStringContent(String unescapedContent) {
         return unescapedContent.replaceAll("('|\\\\(?=')|\\\\\\z)", "\\\\$1");
     }
 
+    /**
+     * Escape a text fragment according to the PHP heredoc syntax in order to make it ready for insertion within
+     * corresponding heredoc delimiters in a PHP document.
+     *
+     * @param unescapedContent The plain text fragment to be escaped.
+     * @return The text resulting from escaping any character with any special meaning the string may contain according
+     * to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.heredoc">The PHP
+     * documentation: Strings, heredoc</a>
+     */
     static String escapePhpHeredocContent(String unescapedContent) {
         // all escape sequences allowed in a double quoted string are valid but the double quote itself
         /* see http://php.net/manual/en/language.types.string.php#language.types.string.syntax.double and
@@ -723,20 +787,45 @@ class PhpStringUtil {
         // a PHP variable identifier is defined by the regexp `[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*`
         // see http://php.net/manual/en/language.variables.basics.php
         return escapeSequencesEscaped
-            .replaceAll("(\\$[a-zA-Z_\\x7f-\\xff])", "\\\\$1")
-            .replaceAll("\\{\\$", "{\\\\\\$");
+                .replaceAll("(\\$[a-zA-Z_\\x7f-\\xff])", "\\\\$1")
+                .replaceAll("\\{\\$", "{\\\\\\$");
     }
 
+    /**
+     * Escape a text fragment according to the PHP nowdoc syntax in order to make it ready for insertion within
+     * corresponding nowdoc delimiters in a PHP document.
+     *
+     * @param unescapedContent The plain text fragment to be escaped.
+     * @return The text resulting from escaping any character with any special meaning the string may contain according
+     * to the language string parsing specification.
+     * @see <a href="http://php.net/manual/en/language.types.string.php#language.types.string.syntax.nowdoc">The PHP
+     * documentation: Strings, nowdoc</a>
+     */
     static String escapePhpNowdocContent(String unescapedContent) {
         // nowdoc string literals' content is exact, no escaping is possible
         return unescapedContent;
     }
 
+    /**
+     * Takes a PHP expression extracted from a double quoted or heredoc string literal in which it was embedded, and
+     * converts any usage of string expression embedding special syntax to in-document standard syntax:
+     * <br/>
+     * <ul>
+     * <li>Expression wrapped inside curly braces: removes the braces anr returns the expression.</li>
+     * <li>Array access expression with an unquoted string as accessor: quotes the array key and returns the array
+     * access expression.</li>
+     * <li>Other expressions: the expression is returned as-is.</li>
+     * </ul>
+     *
+     * @param astNode The ASTNode wrapping the PHP expression, which may be a variable, array access, method invocation,
+     *                etc.
+     * @return The normalized PHP expression as plain text.
+     */
     static String cleanupStringEmbeddedExpression(ASTNode astNode) {
         ASTNode[] children = astNode.getChildren(null);
         if (children.length == 3 &&
-            children[0].getElementType() == PhpTokenTypes.chLBRACE &&
-            children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
+                children[0].getElementType() == PhpTokenTypes.chLBRACE &&
+                children[children.length - 1].getElementType() == PhpTokenTypes.chRBRACE) {
             // it's a variable or expression which was wrapped in curly braces in the string
             String expression = astNode.getText();
             // remove braces and return the expression as-is
@@ -754,13 +843,13 @@ class PhpStringUtil {
             /* If array access expression is not surrounded with braces and the array index is an identifier,
              * then it's using the unquoted key syntax. Surround the index with quotes.
              * See http://php.net/manual/en/language.types.string.php#language.types.string.parsing */
-             /* Explicitly test for the identifier being an octal sequence, which is interpreted as an identifier by the
-              * PHP parser but as an integer offset by the PhpStorm parser.
-              * See https://youtrack.jetbrains.com/issue/WI-25187 */
-            // TODO remove `|| arrayRawAccessIndex.matches("\\A0+[1-9]+[0-9]*\\z")` when WI-25187 gets fixed
+            /* Explicitly test for the identifier being an octal sequence, which is interpreted as an identifier by the
+             * PHP parser but as an integer offset by the PhpStorm parser.
+             * See https://youtrack.jetbrains.com/issue/WI-25187 */
+            // TODO remove `|| arrayRawAccessIndex.matches(REGEXP_PHP_OCTAL_INTEGER)` when WI-25187 gets fixed
             if (arrayAccessExpressionIndexChildren.length == 1 && (
-                arrayAccessExpressionIndexChildren[0].getElementType() == PhpTokenTypes.IDENTIFIER ||
-                    arrayRawAccessIndex.matches(REGEXP_PHP_OCTAL_INTEGER)
+                    arrayAccessExpressionIndexChildren[0].getElementType() == PhpTokenTypes.IDENTIFIER ||
+                            arrayRawAccessIndex.matches(REGEXP_PHP_OCTAL_INTEGER)
             )) {
                 arrayAccessIndex = CHAR_SINGLE_QUOTE + arrayRawAccessIndex + CHAR_SINGLE_QUOTE;
             } else {
@@ -774,50 +863,134 @@ class PhpStringUtil {
         }
     }
 
+    /**
+     * Checks if an heredoc string literal's content, in its escaped form, contains any line which exactly matches a
+     * candidate delimiter so it would prematurely break the string literal.
+     *
+     * @param escapedContent    The heredoc string literal's content in its unescaped form - the way it would compose
+     *                          the heredoc literal on the PHP code.
+     * @param heredocIdentifier The candidate heredoc delimiter to search inside the string literal for collisions.
+     * @return True if the string literal would be broken by the candidate delimiter, false otherwise.
+     */
     public static boolean checkEscapedHeredocContentContainsIdentifierItself(String escapedContent, String
-        heredocIdentifier) {
+            heredocIdentifier) {
         return checkEscapedHeredocOrNowdocContentContainsIdentifierItself(escapedContent, heredocIdentifier);
     }
 
+    /**
+     * Checks if an heredoc or nowdoc string literal's content, in its escaped form, contains any line which exactly
+     * matches a candidate delimiter so it would prematurely break the string literal.
+     *
+     * @param escapedContent            The heredoc or nowdoc string literal's content in its unescaped form - the way
+     *                                  it would compose the string literal on the PHP code.
+     * @param heredocOrNowdocIdentifier The candidate heredoc or nowdoc delimiter to search inside the string literal
+     *                                  for collisions.
+     * @return True if the string literal would be broken by the candidate delimiter, false otherwise.
+     */
     private static boolean checkEscapedHeredocOrNowdocContentContainsIdentifierItself(String escapedContent, String heredocOrNowdocIdentifier) {
         return escapedContent.matches("(?ms).*?^" + heredocOrNowdocIdentifier + "$.*");
     }
 
+    /**
+     * Checks if an nowdoc string literal's content, in its escaped form, contains any line which exactly matches a
+     * candidate delimiter so it would prematurely break the string literal.
+     *
+     * @param escapedContent   The nowdoc string literal's content in its unescaped form - the way it would compose the
+     *                         nowdoc literal on the PHP code.
+     * @param nowdocIdentifier The candidate nowdoc delimiter to search inside the string literal for collisions.
+     * @return True if the string literal would be broken by the candidate delimiter, false otherwise.
+     */
     public static boolean checkEscapedNowdocContentContainsIdentifierItself(String escapedContent, String
-        nowdocIdentifier) {
+            nowdocIdentifier) {
         return checkEscapedHeredocOrNowdocContentContainsIdentifierItself(escapedContent, nowdocIdentifier);
     }
 
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP double quoted string, properly escaping
+     * the provided contents.
+     *
+     * @param project          The project for creating the PhpPsiElement within.
+     * @param unescapedContent The plain text the string literal will contain.
+     * @return A PhpPsiElement wrapping the created double quoted string literal.
+     */
     static StringLiteralExpression createPhpDoubleQuotedStringPsiFromContent(Project project, String unescapedContent) {
         String escapedContent = escapePhpDoubleQuotedStringContent(unescapedContent);
         return createPhpDoubleQuotedStringPsiFromEscapedContent(project, escapedContent);
     }
 
-    static StringLiteralExpression createPhpDoubleQuotedStringPsiFromEscapedContent(Project project, String escapedContent) {
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP double quoted string, using the raw
+     * content provided directly between the delimiters.
+     *
+     * @param project        The project for creating the PhpPsiElement within.
+     * @param escapedContent The text specifying the string literal contents.
+     * @return A PhpPsiElement wrapping the created double quoted string literal.
+     */
+    private static StringLiteralExpression createPhpDoubleQuotedStringPsiFromEscapedContent(Project project, String escapedContent) {
         String phpStringLiteral = CHAR_DOUBLE_QUOTE + escapedContent + CHAR_DOUBLE_QUOTE;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP single quoted string, properly escaping
+     * the provided contents.
+     *
+     * @param project          The project for creating the PhpPsiElement within.
+     * @param unescapedContent The plain text the string literal will contain.
+     * @return A PhpPsiElement wrapping the created single quoted string literal.
+     */
     static StringLiteralExpression createPhpSingleQuotedStringPsiFromContent(Project project, String unescapedContent) {
         String escapedContent = escapePhpSingleQuotedStringContent(unescapedContent);
         return createPhpSingleQuotedStringPsiFromEscapedContent(project, escapedContent);
     }
 
-    static StringLiteralExpression createPhpSingleQuotedStringPsiFromEscapedContent(Project project, String escapedContent) {
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP single quoted string, using the raw
+     * content provided directly between the delimiters.
+     *
+     * @param project        The project for creating the PhpPsiElement within.
+     * @param escapedContent The text specifying the string literal contents.
+     * @return A PhpPsiElement wrapping the created single quoted string literal.
+     */
+    private static StringLiteralExpression createPhpSingleQuotedStringPsiFromEscapedContent(Project project, String escapedContent) {
         String phpStringLiteral = CHAR_SINGLE_QUOTE + escapedContent + CHAR_SINGLE_QUOTE;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP heredoc string, properly escaping
+     * the provided contents.
+     *
+     * @param project          The project for creating the PhpPsiElement within.
+     * @param unescapedContent The plain text the string literal will contain.
+     * @return A PhpPsiElement wrapping the created heredoc string literal.
+     */
     static StringLiteralExpression createPhpHeredocPsiFromContent(Project project, String unescapedContent, String heredocIdentifier) {
         String escapedContent = escapePhpHeredocContent(unescapedContent);
         return createPhpHeredocPsiFromEscapedContent(project, escapedContent, heredocIdentifier);
     }
 
-    static StringLiteralExpression createPhpHeredocPsiFromEscapedContent(Project project, String escapedContent, String heredocIdentifier) {
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP heredoc string, using the raw
+     * content provided directly between the delimiters.
+     *
+     * @param project        The project for creating the PhpPsiElement within.
+     * @param escapedContent The text specifying the string literal contents.
+     * @return A PhpPsiElement wrapping the created heredoc string literal.
+     */
+    private static StringLiteralExpression createPhpHeredocPsiFromEscapedContent(Project project, String escapedContent, String heredocIdentifier) {
         String phpStringLiteral = "<<<" + heredocIdentifier + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + heredocIdentifier;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
 
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP nowdoc string, properly escaping
+     * the provided contents.
+     *
+     * @param project          The project for creating the PhpPsiElement within.
+     * @param unescapedContent The plain text the string literal will contain.
+     * @return A PhpPsiElement wrapping the created nowdoc string literal.
+     */
     static StringLiteralExpression createPhpNowdocPsiFromContent(Project project, String unescapedContent, String nowdocIdentifier) throws PhpStringUtilOperationException {
         String escapedContent = escapePhpNowdocContent(unescapedContent);
         /* if the nowdoc identifier itself matches an exact line inside the escaped content, nowdoc will be cropped and
@@ -828,7 +1001,15 @@ class PhpStringUtil {
         return createPhpNowdocPsiFromEscapedContent(project, escapedContent, nowdocIdentifier);
     }
 
-    static StringLiteralExpression createPhpNowdocPsiFromEscapedContent(Project project, String escapedContent, String nowdocIdentifier) {
+    /**
+     * Creates a PhpPsiElement of type StringLiteralExpression wrapping a PHP nowdoc string, using the raw
+     * content provided directly between the delimiters.
+     *
+     * @param project        The project for creating the PhpPsiElement within.
+     * @param escapedContent The text specifying the string literal contents.
+     * @return A PhpPsiElement wrapping the created nowdoc string literal.
+     */
+    private static StringLiteralExpression createPhpNowdocPsiFromEscapedContent(Project project, String escapedContent, String nowdocIdentifier) {
         String phpStringLiteral = "<<<" + CHAR_SINGLE_QUOTE + nowdocIdentifier + CHAR_SINGLE_QUOTE + CHAR_NEWLINE + escapedContent + CHAR_NEWLINE + nowdocIdentifier;
         return PhpPsiElementFactory.createPhpPsiFromText(project, StringLiteralExpression.class, phpStringLiteral);
     }
